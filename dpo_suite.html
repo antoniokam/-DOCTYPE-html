@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C.M. Service - DPO Compliance Suite (v40 UTOPIA)</title>
+
+    <!-- Caricamento Librerie Esterne -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @media print {
+            body { -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .page-break { page-break-before: always; }
+            ::-webkit-scrollbar { display: none; }
+            .bg-slate-50 { background-color: white !important; }
+            textarea { border: none; resize: none; overflow: hidden; height: auto; }
+            .break-inside-avoid { page-break-inside: avoid; }
+        }
+        .print-only { display: none; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+
+        /* Tooltip */
+        .tooltip { position: relative; display: inline-block; cursor: help; margin-left: 5px; }
+        .tooltip .tooltiptext {
+            visibility: hidden; width: 250px; background-color: #333; color: #fff; text-align: left;
+            border-radius: 6px; padding: 10px; position: absolute; z-index: 50; bottom: 125%; left: 50%;
+            margin-left: -125px; opacity: 0; transition: opacity 0.3s; font-size: 11px; font-weight: normal;
+            pointer-events: none; box-shadow: 0 4px 6px rgba(0,0,0,0.2); line-height: 1.4;
+        }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        .tooltip .tooltiptext::after {
+            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px;
+            border-style: solid; border-color: #333 transparent transparent transparent;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.8); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONE SVG ---
+        const IconBase = ({ children, size = 18, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+
+        const Shield = (p) => <IconBase {...p} size={32}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></IconBase>;
+        const LayoutDashboard = (p) => <IconBase {...p}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></IconBase>;
+        const Briefcase = (p) => <IconBase {...p}><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></IconBase>;
+        const FileText = (p) => <IconBase {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></IconBase>;
+        const ClipboardCheck = (p) => <IconBase {...p}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></IconBase>;
+        const TableIcon = (p) => <IconBase {...p}><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></IconBase>;
+        const BarChart3 = (p) => <IconBase {...p}><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></IconBase>;
+        const Calendar = (p) => <IconBase {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconBase>;
+        const AlertTriangle = (p) => <IconBase {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></IconBase>;
+        const Archive = (p) => <IconBase {...p}><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></IconBase>;
+        const Printer = (p) => <IconBase {...p}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></IconBase>;
+        const Plus = (p) => <IconBase {...p}><path d="M5 12h14"/><path d="M12 5v14"/></IconBase>;
+        const CheckCircle = (p) => <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>;
+        const Clock = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+        const Trash2 = (p) => <IconBase {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconBase>;
+        const X = (p) => <IconBase {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
+        const Info = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
+        const Edit3 = (p) => <IconBase {...p}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></IconBase>;
+        const Activity = (p) => <IconBase {...p}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></IconBase>;
+        const LinkIcon = (p) => <IconBase {...p}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></IconBase>;
+        const FileTextIcon = (p) => <IconBase {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></IconBase>;
+        const History = (p) => <IconBase {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/><path d="M12 7v5l4 2"/></IconBase>;
+        const LogOut = (p) => <IconBase {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></IconBase>;
+        const Lock = (p) => <IconBase {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconBase>;
+        const Key = (p) => <IconBase {...p}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></IconBase>;
+        const Download = (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></IconBase>;
+        const Upload = (p) => <IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></IconBase>;
+        const User = (p) => <IconBase {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconBase>;
+        const BookOpen = (p) => <IconBase {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>;
+        const HelpCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y1="17"/></IconBase>;
+        const Eye = (p) => <IconBase {...p}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const Server = (p) => <IconBase {...p}><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></IconBase>;
+        const Bot = (p) => <IconBase {...p}><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></IconBase>;
+        const Folder = (p) => <IconBase {...p}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></IconBase>;
+
+        // --- ORGANIGRAMMA REPARTI ---
+        const CM_DEPARTMENTS = [
+            "Direzione Socio Sanitario", "Direzione Personale", "Direzione Commerciale e Gare",
+            "Direzione Gestione Commesse Food", "Ufficio Gare Cleaning", "Ufficio Gare Socio-Sanitario",
+            "Ufficio Acquisti / Gestione Flotta", "Ufficio Tecnico Manutentivo", "Ufficio Certificazioni e Formazione",
+            "Ufficio Legale e Compliance", "Ufficio Customer Care / IT Esterno", "Ufficio Commerciale Privati",
+            "Responsabili Operativi (Area Scuole/Sanità)"
+        ];
+
+        // --- COMPONENTI UI ESTERNI ---
+        const SidebarItem = ({ icon: I, label, id, activeTab, setActiveTab }) => (
+            <button onClick={() => setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>
+                <I size={18} /><span className="font-semibold text-sm">{label}</span>
+            </button>
+        );
+
+        const DocLink = ({ url }) => {
+            if(!url) return <span className="text-xs text-slate-300 italic">Nessun Doc</span>;
+            return <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-slate-100 text-blue-600 px-2 py-1 rounded-lg text-xs font-bold hover:bg-blue-50 border border-slate-200"><LinkIcon size={12}/> Apri</a>;
+        };
+
+        const SmartDocLink = ({ data, onOpenDpia }) => {
+            if (!data) return <span className="text-xs text-slate-300 italic">Nessun Doc</span>;
+            if (data.startsWith("DPIA_REF:")) {
+                const projectName = data.replace("DPIA_REF:", "");
+                return (
+                    <button
+                        onClick={() => onOpenDpia(projectName)}
+                        className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-purple-200 border border-purple-200 transition-all shadow-sm"
+                        title="Clicca per aprire la scheda di valutazione completa"
+                    >
+                        <Eye size={14}/> VEDI ANALISI
+                    </button>
+                );
+            }
+            return (
+                <a href={data} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-slate-100 text-blue-600 px-2 py-1 rounded-lg text-xs font-bold hover:bg-blue-50 border border-slate-200">
+                    <LinkIcon size={12}/> Apri
+                </a>
+            );
+        };
+
+        const EditButton = ({ item, type, setEditItem, setShowModal }) => (
+             <button onClick={() => { setEditItem(item); setShowModal(type); }} className="text-blue-400 hover:text-blue-600 mr-2"><Edit3 size={16}/></button>
+        );
+
+        const InfoBox = ({ title, text, gdprRef, checklist }) => (
+            <div className="bg-sky-50 border-l-4 border-sky-500 p-4 mb-6 rounded-r-lg shadow-sm no-print">
+                <div className="flex items-start gap-3">
+                    <BookOpen className="text-sky-600 mt-1 flex-shrink-0" size={20}/>
+                    <div>
+                        <h4 className="font-bold text-sky-900 text-sm uppercase tracking-tight mb-1">{title}</h4>
+                        <p className="text-sky-800 text-sm leading-relaxed opacity-90 mb-2">{text}</p>
+                        {checklist && (
+                            <ul className="list-disc list-inside text-xs text-sky-700 mb-2">
+                                {checklist.map((item, idx) => <li key={idx}>{item}</li>)}
+                            </ul>
+                        )}
+                        {gdprRef && <span className="inline-block bg-sky-100 text-sky-700 text-[10px] font-bold px-2 py-1 rounded border border-sky-200">Rif. {gdprRef}</span>}
+                    </div>
+                </div>
+            </div>
+        );
+
+        const HelpIcon = ({ text }) => (
+            <span className="tooltip ml-1 text-slate-400 cursor-help"><HelpCircle size={14} /><span className="tooltiptext">{text}</span></span>
+        );
+
+        // --- COMPONENTE GAUGE SCORE ---
+        const ComplianceGauge = ({ score }) => {
+            const radius = 40;
+            const stroke = 8;
+            const normalizedScore = Math.max(0, Math.min(score, 100));
+            const circumference = normalizedScore * 2 * Math.PI * radius / 100;
+            const color = normalizedScore >= 80 ? 'text-green-500' : normalizedScore >= 50 ? 'text-yellow-500' : 'text-red-500';
+
+            return (
+                <div className="relative flex items-center justify-center">
+                    <svg height={radius * 2 + stroke * 2} width={radius * 2 + stroke * 2} className="transform -rotate-90">
+                        <circle stroke="currentColor" fill="transparent" strokeWidth={stroke} r={radius} cx={radius + stroke} cy={radius + stroke} className="text-slate-100" />
+                        <circle stroke="currentColor" fill="transparent" strokeWidth={stroke} strokeDasharray={`${circumference} 1000`} r={radius} cx={radius + stroke} cy={radius + stroke} className={`${color} transition-all duration-1000 ease-out`} />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                        <span className={`text-2xl font-black ${color}`}>{score}%</span>
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Score</span>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTE GRAFICO RISCHIO (FIXED FILTER) ---
+        const RiskChart = ({ items = [], prob, grav }) => {
+            const renderCell = (g, p) => {
+                const score = g * p;
+                let colorClass = "bg-green-100 border-green-200";
+                if (score > 9) colorClass = "bg-red-100 border-red-200";
+                else if (score > 4) colorClass = "bg-yellow-100 border-yellow-200";
+
+                // Filtro per Dashboard (pallini)
+                const cellItems = items.filter(i => {
+                    const probR = i.probRes || i.prob;
+                    const gravR = i.gravRes || i.grav;
+                    return parseInt(probR) === p && parseInt(gravR) === g;
+                });
+
+                // Evidenziazione per Scheda Singola
+                const isHighlighted = prob && grav && parseInt(prob) === p && parseInt(grav) === g;
+
+                return (
+                    <div key={`${g}-${p}`} className={`border relative h-16 p-1 ${colorClass} ${isHighlighted ? 'ring-4 ring-blue-600 z-10 scale-105 shadow-xl' : ''} transition-all hover:brightness-95`}>
+                        <span className="absolute top-0 right-1 text-[10px] text-slate-400 font-bold">{score}</span>
+
+                        {/* Pallini Dashboard */}
+                        <div className="flex flex-wrap gap-1 content-start h-full overflow-y-auto">
+                            {cellItems.map((item, idx) => (
+                                <div key={idx} className="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center text-[9px] font-bold shadow-sm cursor-help transform hover:scale-110 transition-transform" title={`${item.project} (Residuo: ${score})`}>
+                                    {idx + 1}
+                                </div>
+                            ))}
+                        </div>
+
+                         {/* Highlight Scheda Singola */}
+                         {isHighlighted && <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-3 h-3 bg-blue-600 rounded-full animate-ping"></div></div>}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex select-none text-xs">
+                    <div className="flex flex-col justify-center items-center w-6 mr-1">
+                        <span className="transform -rotate-90 whitespace-nowrap font-bold text-[10px] text-slate-500 tracking-wider">GRAVITÀ</span>
+                    </div>
+                    <div className="flex-1">
+                        <div className="grid grid-cols-4 gap-1 border-2 border-slate-300 rounded-lg overflow-hidden bg-slate-50">
+                            {[4, 3, 2, 1].map(g => (
+                                <React.Fragment key={g}>
+                                    {[1, 2, 3, 4].map(p => renderCell(g, p))}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                        <div className="text-center mt-2">
+                            <span className="font-bold text-[10px] text-slate-500 tracking-wider">PROBABILITÀ</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] px-2 text-slate-400 mt-1 font-mono">
+                            <span>1 (Bassa)</span>
+                            <span>4 (Alta)</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- APP ---
+        const App = () => {
+            const currentYearStr = new Date().getFullYear().toString();
+            const [selectedYear, setSelectedYear] = useState(currentYearStr);
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [showModal, setShowModal] = useState(null);
+            const [notification, setNotification] = useState(null);
+            const [editItem, setEditItem] = useState(null);
+            const [viewDpia, setViewDpia] = useState(null);
+
+            // --- AUTH STATE & CONFIG ---
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [passInput, setPassInput] = useState("");
+            const [userInput, setUserInput] = useState("");
+            const [authError, setAuthError] = useState(false);
+            const [passwordWarning, setPasswordWarning] = useState(null);
+            const [forcePassChange, setForcePassChange] = useState(false);
+            const [currentUser, setCurrentUser] = useState(null);
+
+            const [usersConfig, setUsersConfig] = useState(() => {
+                const saved = localStorage.getItem('cm_service_dpo_users');
+                return saved ? JSON.parse(saved) : {
+                    'dpo': { role: 'DPO', password: 'adminDPO2025', lastSet: Date.now() },
+                    'srm': { role: 'SRM (Operativo)', password: 'userSRM2025', lastSet: Date.now() }
+                };
+            });
+
+            useEffect(() => { localStorage.setItem('cm_service_dpo_users', JSON.stringify(usersConfig)); }, [usersConfig]);
+
+            // --- DATI INIZIALI ---
+            const initialData = {
+                "2024": {
+                     treatments: [], breaches: [], dpias: [], deadlines: [], auditQuestions: [], esgMetrics: {}, logs: [], reportTexts: {}, raciItems: [], assets: [], documents: []
+                },
+                [currentYearStr]: {
+                    treatments: [
+                        { id: 1, name: "Gestione Ospiti RSA (Dati Sanitari)", dept: "Direzione Socio Sanitario", basis: "Obbligo Legale/Consenso", status: "Attivo", risk: "Alto", docLink: "" },
+                        { id: 2, name: "Localizzazione GPS Automezzi", dept: "Ufficio Acquisti / Gestione Flotta", basis: "Legittimo Interesse", status: "Attivo", risk: "Alto", docLink: "" },
+                        { id: 3, name: "Videosorveglianza Sedi", dept: "Ufficio Tecnico Manutentivo", basis: "Legittimo Interesse", status: "Attivo", risk: "Medio", docLink: "" },
+                        { id: 4, name: "Gestione Dispositivi Mobili (Smartphone/Tablet)", dept: "Ufficio Customer Care / IT Esterno", basis: "Contratto di Lavoro", status: "Attivo", risk: "Medio", docLink: "" },
+                        { id: 5, name: "Assegnazione e Gestione PC/Laptop Aziendali", dept: "Ufficio Customer Care / IT Esterno", basis: "Legittimo Interesse", status: "Attivo", risk: "Basso", docLink: "" },
+                        { id: 6, name: "Gestione Personale Dipendente e Paghe (HR)", dept: "Direzione Personale", basis: "Obbligo Legale", status: "Attivo", risk: "Alto", docLink: "" },
+                        { id: 7, name: "Gestione Clienti e Fornitori", dept: "Direzione Commerciale e Gare", basis: "Contratto", status: "Attivo", risk: "Basso", docLink: "" },
+                        { id: 8, name: "Canale Segnalazioni Whistleblowing", dept: "Ufficio Legale e Compliance", basis: "Obbligo Legale", status: "Attivo", risk: "Alto", docLink: "" }
+                    ],
+                    breaches: [],
+                    dpias: [
+                        { id: 1, project: "Sistema Videosorveglianza RSA", dept: "Direzione Socio Sanitario", date: "2024-10-15",
+                          description: "Installazione sistema TVCC per sicurezza perimetrale.", necessity: "Tutela patrimonio e sicurezza ospiti.",
+                          prob: 4, grav: 4, riskScore: 16, riskLevel: "Alto", // Inerente
+                          mitigations: "Accesso ristretto, cifratura registrazioni, cancellazione automatica 24h.",
+                          probRes: 2, gravRes: 3, riskScoreRes: 6, riskLevelRes: "Medio", // Residuo
+                          status: "Approvata", docLink: "", reviewDate: `${parseInt(currentYearStr)+1}-10-15`, standardsRef: "Linee Guida EDPB 3/2019"
+                        }
+                    ],
+                    deadlines: [
+                        { id: 1, task: "Audit Annuale Protezione Dati", date: `${currentYearStr}-12-15`, priority: "Alta" },
+                        { id: 2, task: "Revisione Registro Trattamenti (Art. 30)", date: `${currentYearStr}-06-30`, priority: "Media" },
+                        { id: 3, task: "Verifica Nomine Responsabili Esterni", date: `${currentYearStr}-09-30`, priority: "Bassa" },
+                        { id: 4, task: "Aggiornamento Formazione Personale RSA", date: `${currentYearStr}-10-15`, priority: "Alta" }
+                    ],
+                    auditQuestions: [
+                        { id: 'reg1', category: "Registro Trattamenti", label: "Esiste il registro delle attività di trattamento?", result: "na", note: "", docLink: "" },
+                        { id: 'sec2', category: "Misure Sicurezza", label: "Le password vengono cambiate periodicamente?", result: "na", note: "", docLink: "" },
+                        { id: 'org2', category: "Misure Organizzative (NIS2)", label: "Esiste un piano di continuità operativa?", result: "na", note: "", docLink: "" }
+                    ],
+                    esgMetrics: { training: 85, requestsTime: 10, supplierAudit: 60 },
+                    reportTexts: {
+                         premessa: "La presente Relazione riporta le attività e le valutazioni della funzione privacy di C.M. Service...",
+                         attivita: "Nel corso dell'esercizio, la Funzione Privacy ha supportato le strutture di C.M. Service...",
+                         controlli: "L'attività di controllo si è esplicata attraverso audit periodici...",
+                         nis2: "Per il prossimo esercizio, C.M. Service intende rafforzare ulteriormente i presidi..."
+                    },
+                    raciItems: [
+                        { id: 1, task: "Definizione Politiche Sicurezza (ISO 27001)", r: "DPO", a: "Direzione", c: "IT", i: "Dipendenti" },
+                        { id: 2, task: "Aggiornamento Registro Trattamenti (GDPR)", r: "DPO", a: "Direzione", c: "Resp. Funzione", i: "-" },
+                        { id: 3, task: "Valutazione dei Rischi / DPIA (GDPR/ISO)", r: "DPO", a: "Direzione", c: "IT/Legal", i: "-" },
+                        { id: 4, task: "Gestione Incidenti e Data Breach (GDPR/NIS2)", r: "IT", a: "DPO", c: "Legal", i: "Direzione" },
+                        { id: 5, task: "Formazione Dipendenti Privacy/Cyber", r: "HR", a: "Direzione", c: "DPO", i: "Dipendenti" },
+                        { id: 6, task: "Audit Fornitori e Catena di Fornitura (NIS2)", r: "Acquisti", a: "Direzione", c: "DPO", i: "Fornitori" },
+                        { id: 7, task: "Test Continuità Operativa / DR", r: "IT", a: "Direzione", c: "DPO", i: "-" },
+                        { id: 8, task: "Gestione Accessi e Identità", r: "IT", a: "HR", c: "DPO", i: "Dipendenti" }
+                    ],
+                    assets: [
+                        { id: 1, type: "Hardware", name: "Server Dell PowerEdge", location: "Sala Server Sede", owner: "IT", status: "In Uso", notes: "Gestisce VM produzione" },
+                        { id: 2, type: "Software", name: "CRM Aziendale", location: "Cloud", owner: "Direzione Commerciale", status: "In Uso", notes: "Contiene dati clienti" }
+                    ],
+                    documents: [
+                         { id: 1, type: "Informativa", title: "Informativa Dipendenti", date: "2024-01-10", version: "2.0", link: "" },
+                         { id: 2, type: "Nomina", title: "Nomina Responsabile IT", date: "2024-02-15", version: "1.0", link: "" }
+                    ],
+                    logs: [],
+                }
+            };
+
+            const [allData, setAllData] = useState(() => {
+                const saved = localStorage.getItem('cm_service_dpo_v40');
+                return saved ? JSON.parse(saved) : initialData;
+            });
+            const yearData = allData[selectedYear] || initialData[currentYearStr];
+            useEffect(() => { localStorage.setItem('cm_service_dpo_v40', JSON.stringify(allData)); }, [allData]);
+
+            // --- HELPERS ---
+            const notify = (msg) => { setNotification(msg); setTimeout(() => setNotification(null), 3000); };
+            const formatDate = (d) => d ? new Date(d).toLocaleDateString('it-IT') : "-";
+            const formatDateTime = (d) => d ? new Date(d).toLocaleString('it-IT') : "-";
+            const calculateRisk = (p, g) => { const s=p*g; return { sc:s, lvl: s<=4?"Basso":s<=9?"Medio":"Alto", col: s<=4?"green":s<=9?"yellow":"red" }; };
+            const checkDeadlineAlert = (dateStr) => { if(!dateStr) return false; const diff = (new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24); return diff > 0 && diff <= 30; };
+
+            const calculateComplianceScore = () => {
+                const auditQ = yearData.auditQuestions || [];
+                const auditScore = auditQ.length ? (auditQ.filter(q=>q.result==='si').length / auditQ.length) * 100 : 0;
+
+                const treatments = yearData.treatments || [];
+                const treatScore = treatments.length > 0 ? 100 : 0; // Semplificato: se hai censito, hai punti
+
+                const breaches = yearData.breaches || [];
+                const breachScore = breaches.filter(b=>b.status!=='Chiuso').length === 0 ? 100 : 50;
+
+                // Pesa i componenti: 50% Audit, 30% Registro, 20% Breach
+                const total = (auditScore * 0.5) + (treatScore * 0.3) + (breachScore * 0.2);
+                return Math.round(total);
+            };
+
+            const loadStandardDeadlines = () => {
+                const deadlines = [
+                    { task: "Revisione Annuale Registro Trattamenti", date: `${selectedYear}-02-28`, priority: "Alta" },
+                    { task: "Verifica Nomine Responsabili Esterni (Art. 28)", date: `${selectedYear}-03-31`, priority: "Media" },
+                    { task: "Audit Fornitori IT (ISO/NIS2)", date: `${selectedYear}-05-30`, priority: "Alta" },
+                    { task: "Revisione Politiche di Sicurezza", date: `${selectedYear}-06-30`, priority: "Media" },
+                    { task: "Formazione Privacy e Cyber Dipendenti", date: `${selectedYear}-09-30`, priority: "Alta" },
+                    { task: "Test Incident Response / Disaster Recovery", date: `${selectedYear}-10-31`, priority: "Alta" },
+                    { task: "Relazione Annuale DPO", date: `${selectedYear}-12-15`, priority: "Media" }
+                ];
+
+                const newItems = deadlines.map((d, i) => ({...d, id: Date.now() + i}));
+                updateData('deadlines', [...yearData.deadlines, ...newItems], "Inserimento Multiplo", "Caricate scadenze standard");
+                notify("Scadenze standard caricate.");
+            };
+
+            const loadTonySuggestions = () => {
+                 const suggestions = [
+                    { name: "Videosorveglianza Perimetrale", dept: "Sicurezza", basis: "Legittimo Interesse", risk: "Alto" },
+                    { name: "Gestione Newsletter Marketing", dept: "Marketing", basis: "Consenso", risk: "Basso" },
+                    { name: "Fatturazione Elettronica", dept: "Amministrazione", basis: "Obbligo Legale", risk: "Medio" },
+                    { name: "Controllo Accessi Biometrico", dept: "HR/Sicurezza", basis: "Legittimo Interesse", risk: "Alto" }
+                ];
+
+                if(!window.confirm(`Tony Assistant: Vuoi importare ${suggestions.length} trattamenti suggeriti?`)) return;
+
+                const newTreats = suggestions.map((s, i) => ({
+                    ...s,
+                    id: Date.now() + i,
+                    status: "Da Verificare",
+                    docLink: ""
+                }));
+
+                updateData('treatments', [...yearData.treatments, ...newTreats], "Import Tony", "Importati trattamenti suggeriti");
+                notify("Grazie Tony! Trattamenti importati.");
+            };
+
+            // --- AUTH LOGIC (MULTI-USER) ---
+            const checkPasswordExpiry = (u) => { const user=usersConfig[u]; const diff=(user.lastSet+(180*24*60*60*1000))-Date.now(); return {status: diff<=0?'expired':diff<=864000000?'warning':'ok', days: Math.ceil(diff/86400000)}; };
+            const handleLogin = (e) => { e.preventDefault(); const u=userInput.toLowerCase().trim(); if(usersConfig[u] && usersConfig[u].password===passInput) { const chk=checkPasswordExpiry(u); if(chk.status==='expired'){setCurrentUser(u);setIsAuthenticated(true);setForcePassChange(true);setShowModal('changePass');} else {setCurrentUser(u);setIsAuthenticated(true);if(chk.status==='warning') setPasswordWarning(`Pass scade tra ${chk.days}gg`);} } else setAuthError(true); };
+            const handleLogout = () => { setIsAuthenticated(false); setPassInput(""); setUserInput(""); };
+            const handleChangePassword = (e) => { e.preventDefault(); const fd=new FormData(e.target); if(!forcePassChange && fd.get('oldP')!==usersConfig[currentUser].password) return alert("Errata"); if(fd.get('newP')!==fd.get('confP')) return alert("Non coincidono"); setUsersConfig(p=>({...p,[currentUser]:{...p[currentUser],password:fd.get('newP'),lastSet:Date.now()}})); setShowModal(null); setForcePassChange(false); notify("Password cambiata"); };
+
+            // --- EXPORT/IMPORT ---
+            const handleExport = () => {
+                const now = new Date();
+                const dateStr = now.toISOString().slice(0,10);
+                const userRole = usersConfig[currentUser]?.role || 'Anon';
+                const dataToExport = { ...allData, meta: { lastUser: userRole, lastDate: now.toISOString() } };
+                const fileName = `Backup_DPO_${dateStr}_${userRole.replace(/\s+/g, '')}.json`;
+                const dataStr = JSON.stringify(dataToExport, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a'); link.href = url; link.download = fileName;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+
+            const handleImportTrigger = () => document.getElementById('importFile').click();
+            const handleImportFile = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const json = JSON.parse(ev.target.result);
+                        if(window.confirm("Sovrascrivere i dati correnti?")) {
+                            setAllData(json);
+                            localStorage.setItem('cm_service_dpo_v40', JSON.stringify(json));
+                            addLog("System", `Importato backup`, currentUser);
+                            notify("Dati ripristinati!");
+                        }
+                    } catch (err) { alert("File non valido."); }
+                };
+                reader.readAsText(file);
+                e.target.value = null;
+            };
+
+            // --- CRUD ---
+            const addLog = (action, detail, userKey) => {
+                const userRole = userKey ? usersConfig[userKey]?.role : (currentUser ? usersConfig[currentUser]?.role : 'Sistema');
+                const newLog = { id: Date.now(), date: new Date().toLocaleString('it-IT'), user: userRole, action: action, detail: detail };
+                setAllData(prev => {
+                    const yData = prev[selectedYear] || JSON.parse(JSON.stringify(initialData[currentYearStr]));
+                    return { ...prev, [selectedYear]: { ...yData, logs: [newLog, ...(yData.logs || [])] } };
+                });
+            };
+
+            const updateData = (key, data, logAction, logDetail) => {
+                const userRole = currentUser ? usersConfig[currentUser]?.role : 'Sistema';
+                const newLog = { id: Date.now(), date: new Date().toLocaleString(), user: userRole, action: logAction, detail: logDetail };
+                setAllData(prev => {
+                    const yData = prev[selectedYear] || JSON.parse(JSON.stringify(initialData[currentYearStr]));
+                    return { ...prev, [selectedYear]: { ...yData, [key]: data, logs: [newLog, ...(yData.logs || [])] } };
+                });
+            };
+
+            const addItem = (key, item, logMsg) => {
+                const list = yearData[key] || [];
+                updateData(key, [...list, { ...item, id: Date.now() }], "Inserimento", logMsg);
+                if (key === 'dpias') integrateDpiaToRegister(item);
+                setShowModal(null); notify("Salvato");
+            };
+
+            const updateItem = (key, item, logMsg) => {
+                const list = yearData[key] || [];
+                const updatedList = list.map(i => i.id === item.id ? item : i);
+                updateData(key, updatedList, "Modifica", logMsg);
+                if (key === 'dpias') integrateDpiaToRegister(item);
+                setShowModal(null); setEditItem(null); notify("Aggiornato");
+            };
+
+            const deleteItem = (key, id, logMsg) => {
+                if(!window.confirm("Confermi eliminazione?")) return;
+                updateData(key, (yearData[key] || []).filter(i => i.id !== id), "Eliminazione", logMsg);
+                notify("Eliminato");
+            };
+
+            const integrateDpiaToRegister = (dpiaItem) => {
+                const currentTreatments = allData[selectedYear]?.treatments || [];
+                const existingIndex = currentTreatments.findIndex(t => t.name.includes(dpiaItem.project));
+                let newTreatments = [...currentTreatments];
+                const narrativeNote = `DPIA_REF:${dpiaItem.project}`;
+
+                if (existingIndex >= 0) {
+                    newTreatments[existingIndex] = {
+                        ...newTreatments[existingIndex],
+                        risk: dpiaItem.riskLevelRes || dpiaItem.riskLevel,
+                        dept: dpiaItem.dept,
+                        docLink: narrativeNote
+                    };
+                } else {
+                    newTreatments.push({
+                        id: Date.now(),
+                        name: dpiaItem.project,
+                        dept: dpiaItem.dept,
+                        basis: "Legittimo Interesse (DPIA)",
+                        status: "Attivo",
+                        risk: dpiaItem.riskLevelRes || dpiaItem.riskLevel,
+                        docLink: narrativeNote
+                    });
+                }
+                updateData('treatments', newTreatments, "Auto-Link", `Registro aggiornato da DPIA: ${dpiaItem.project}`);
+            };
+
+            const openDpiaFromReg = (projectName) => {
+                const dpia = yearData.dpias.find(d => d.project === projectName);
+                if (dpia) { setViewDpia(dpia); } else { alert("Scheda DPIA non trovata."); }
+            };
+
+            const handleAudit = (id, f, v) => updateData('auditQuestions', yearData.auditQuestions.map(q=>q.id===id?{...q,[f]:v}:q));
+            const handleReportTextChange = (section, val) => setAllData(prev => ({ ...prev, [selectedYear]: { ...prev[selectedYear], reportTexts: { ...prev[selectedYear].reportTexts, [section]: val } } }));
+            const cycleBreach = (id, status) => { const st = ["Aperto", "In Analisi", "In Gestione", "Chiuso"]; const next = st[(st.indexOf(status)+1)%4]; updateData('breaches', yearData.breaches.map(b => b.id === id ? { ...b, status: next } : b)); };
+            const handleEsgChange = (field, value) => { const cm = yearData.esgMetrics || { training: 0, requestsTime: 0, supplierAudit: 0 }; updateData('esgMetrics', { ...cm, [field]: parseInt(value) }); };
+
+            const generateReportDraft = () => {
+                if(!window.confirm("Attenzione: Questo sovrascriverà i testi attuali. Continuare?")) return;
+
+                const nTreat = yearData.treatments?.length || 0;
+                const nHigh = yearData.treatments?.filter(t => t.risk === 'Alto').length || 0;
+                const nDpia = yearData.dpias?.length || 0;
+                const nBreach = yearData.breaches?.length || 0;
+                const nBreachOpen = yearData.breaches?.filter(b => b.status !== 'Chiuso').length || 0;
+                const auditScore = yearData.auditQuestions?.length ? Math.round((yearData.auditQuestions.filter(q=>q.result==='si').length/yearData.auditQuestions.length)*100) : 0;
+
+                const txtPremessa = `Nel corso dell'anno ${selectedYear}, C.M. Service ha proseguito il percorso di adeguamento al Regolamento UE 2016/679 (GDPR) e alle normative in materia di Cybersecurity (NIS 2 / ISO 27001). Il contesto operativo ha visto un incremento della digitalizzazione dei processi, richiedendo un focus specifico sulla sicurezza delle informazioni e sulla resilienza operativa.`;
+
+                const txtAttivita = `L'attività di gestione ha riguardato l'aggiornamento costante del Registro dei Trattamenti, che ad oggi conta ${nTreat} attività censite, di cui ${nHigh} classificate ad alto rischio. Sono state condotte ${nDpia} Valutazioni d'Impatto (DPIA) per i trattamenti più critici. La gestione dei Data Breach ha visto la registrazione di ${nBreach} eventi, di cui ${nBreachOpen} ancora in fase di gestione o analisi.`;
+
+                const txtControlli = `Il piano di audit interno ha coperto le aree principali di rischio. L'indice sintetico di conformità rilevato è pari al ${auditScore}%. Sono state verificate le procedure di gestione degli accessi, la formazione del personale e la gestione dei fornitori. Le non conformità rilevate sono state prese in carico con specifici piani di rimedio.`;
+
+                const txtNis = `In vista della piena conformità alla Direttiva NIS 2 e agli standard ISO 27001, l'organizzazione si pone l'obiettivo di rafforzare la Business Continuity e la sicurezza della Supply Chain. Verranno introdotti nuovi controlli sui fornitori critici e potenziati i test di incident response.`;
+
+                setAllData(prev => ({
+                    ...prev,
+                    [selectedYear]: {
+                        ...prev[selectedYear],
+                        reportTexts: {
+                            premessa: txtPremessa,
+                            attivita: txtAttivita,
+                            controlli: txtControlli,
+                            nis2: txtNis
+                        }
+                    }
+                }));
+                addLog("Report", "Generazione automatica bozza", currentUser);
+                notify("Bozza generata con successo!");
+            };
+
+            const loadStandardControls = () => {
+                if(yearData.auditQuestions.length > 0 && !window.confirm("Esistono già delle domande. Vuoi aggiungere i controlli standard ISO/NIS2 alla lista esistente?")) return;
+
+                const standardControls = [
+                    // ISO 27001
+                    { id: 'iso_1', category: 'ISO 27001 - Sicurezza Fisica', label: 'L\'accesso fisico alle sale server/archivi è controllato e registrato?', result: 'na', note: '', docLink: '' },
+                    { id: 'iso_2', category: 'ISO 27001 - Controllo Accessi', label: 'Esiste una politica formale di gestione delle password (lunghezza, complessità)?', result: 'na', note: '', docLink: '' },
+                    { id: 'iso_3', category: 'ISO 27001 - Asset Management', label: 'Esiste un inventario aggiornato degli asset informatici (hardware/software)?', result: 'na', note: '', docLink: '' },
+                    { id: 'iso_4', category: 'ISO 27001 - HR Security', label: 'La formazione sulla sicurezza è obbligatoria per i neoassunti?', result: 'na', note: '', docLink: '' },
+
+                    // NIS 2
+                    { id: 'nis_1', category: 'NIS 2 - Gestione Incidenti', label: 'Esiste una procedura formale di Incident Response con tempi di notifica definiti?', result: 'na', note: '', docLink: '' },
+                    { id: 'nis_2', category: 'NIS 2 - Supply Chain', label: 'Sono stati valutati i rischi di sicurezza dei fornitori critici (ICT)?', result: 'na', note: '', docLink: '' },
+                    { id: 'nis_3', category: 'NIS 2 - Business Continuity', label: 'Esiste un piano di Business Continuity / Disaster Recovery testato annualmente?', result: 'na', note: '', docLink: '' },
+                    { id: 'nis_4', category: 'NIS 2 - Vulnerability', label: 'Vengono eseguiti vulnerability scan periodici sui sistemi esposti?', result: 'na', note: '', docLink: '' },
+
+                    // GDPR Core
+                    { id: 'gdpr_1', category: 'GDPR - Accountability', label: 'Il Registro dei Trattamenti è aggiornato agli ultimi processi?', result: 'na', note: '', docLink: '' },
+                    { id: 'gdpr_2', category: 'GDPR - Diritti Interessati', label: 'Esiste una procedura per rispondere alle richieste di esercizio diritti (es. accesso)?', result: 'na', note: '', docLink: '' }
+                ];
+
+                const existingIds = new Set(yearData.auditQuestions.map(q => q.label));
+                const newQuestions = standardControls.filter(q => !existingIds.has(q.label)).map((q, i) => ({...q, id: Date.now() + i}));
+
+                if (newQuestions.length === 0) {
+                    notify("Tutti i controlli standard sono già presenti.");
+                    return;
+                }
+
+                updateData('auditQuestions', [...yearData.auditQuestions, ...newQuestions], "Inserimento Multiplo", "Caricati controlli standard ISO/NIS2");
+                notify(`Aggiunti ${newQuestions.length} controlli standard.`);
+            };
+
+            // --- RENDER ---
+            if (!isAuthenticated) return (
+                <div className="flex items-center justify-center h-screen bg-slate-100"><div className="bg-white p-10 rounded-3xl shadow-xl w-96 text-center"><Shield size={64} className="mx-auto text-blue-600 mb-4"/><h1 className="text-2xl font-black mb-2">C.M. Service</h1><p className="text-sm text-slate-500 mb-6">DPO Compliance System</p><form onSubmit={handleLogin} className="space-y-4"><input className="w-full border p-3 rounded" placeholder="Utente" value={userInput} onChange={e=>setUserInput(e.target.value)}/><input type="password" className="w-full border p-3 rounded" placeholder="Password" value={passInput} onChange={e=>setPassInput(e.target.value)}/><button className="w-full bg-blue-600 text-white py-3 rounded font-bold">ACCEDI</button></form>{authError && <p className="text-red-500 text-xs mt-2">Errore credenziali</p>}</div></div>
+            );
+
+            // SCHEDA DPIA COMPLETA (MODALE)
+             if (viewDpia) {
+                const rIner = calculateRisk(viewDpia.prob, viewDpia.grav);
+                const rRes = calculateRisk(viewDpia.probRes, viewDpia.gravRes);
+                return (
+                    <div className="fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-4xl h-[90vh] overflow-y-auto rounded-xl shadow-2xl p-12 relative print:w-full print:h-auto print:absolute print:top-0 print:left-0">
+                            <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-8">
+                                <div><h1 className="text-3xl font-black uppercase text-slate-900">Valutazione d'Impatto (DPIA)</h1><h2 className="text-lg text-slate-600">Art. 35 Regolamento UE 2016/679</h2></div>
+                                <div className="text-right text-sm"><p><strong>Data:</strong> {formatDate(viewDpia.date)}</p><p><strong>ID Progetto:</strong> {viewDpia.id}</p></div>
+                            </div>
+                            <div className="space-y-8">
+                                <section><h3 className="bg-slate-100 p-2 font-bold text-blue-900 uppercase text-sm border-l-4 border-blue-600 mb-3">1. Sintesi</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><span className="block font-bold text-slate-500">Titolo</span>{viewDpia.project}</div><div><span className="block font-bold text-slate-500">Reparto</span>{viewDpia.dept}</div></div></section>
+                                <section><h3 className="bg-slate-100 p-2 font-bold text-blue-900 uppercase text-sm border-l-4 border-blue-600 mb-3">2. Descrizione</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><span className="block font-bold text-slate-500">Natura</span>{viewDpia.nature}</div><div><span className="block font-bold text-slate-500">Ambito</span>{viewDpia.scope}</div></div></section>
+                                <section><h3 className="bg-slate-100 p-2 font-bold text-blue-900 uppercase text-sm border-l-4 border-blue-600 mb-3">3. Necessità</h3><div className="text-sm"><div><span className="font-bold text-slate-500">Base Giuridica:</span> {viewDpia.legalBasis}</div></div></section>
+                                <section className="grid grid-cols-2 gap-8">
+                                    <div><h3 className="bg-red-50 p-2 font-bold text-red-900 uppercase text-sm border-l-4 border-red-600 mb-3">4. Rischio Inerente</h3><div className={`text-center px-4 py-1 rounded font-bold text-white ${rIner.col === 'red' ? 'bg-red-600' : 'bg-yellow-500'}`}>{rIner.sc} ({rIner.lvl})</div><div className="mt-2 border p-2 rounded"><RiskChart prob={viewDpia.prob} grav={viewDpia.grav} /></div></div>
+                                    <div><h3 className="bg-green-50 p-2 font-bold text-green-900 uppercase text-sm border-l-4 border-green-600 mb-3">5. Rischio Residuo</h3><div className={`text-center px-4 py-1 rounded font-bold text-white ${rRes.col === 'red' ? 'bg-red-600' : rRes.col === 'yellow' ? 'bg-yellow-500' : 'bg-green-600'}`}>{rRes.sc} ({rRes.lvl})</div><div className="mt-2 border p-2 rounded"><RiskChart prob={viewDpia.probRes} grav={viewDpia.gravRes} /></div></div>
+                                </section>
+                                <section><h3 className="bg-slate-100 p-2 font-bold text-blue-900 uppercase text-sm border-l-4 border-blue-600 mb-3">6. Misure</h3><div className="text-sm border p-4 rounded bg-slate-50"><p className="whitespace-pre-wrap">{viewDpia.mitigations}</p></div></section>
+
+                                {(viewDpia.reviewDate || viewDpia.standardsRef) && (
+                                     <section><h3 className="bg-slate-100 p-2 font-bold text-blue-900 uppercase text-sm border-l-4 border-blue-600 mb-3">7. Revisione & Standard</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><span className="block font-bold text-slate-500">Prossima Revisione</span>{formatDate(viewDpia.reviewDate)}</div><div><span className="block font-bold text-slate-500">Standard di Riferimento</span>{viewDpia.standardsRef}</div></div></section>
+                                )}
+                            </div>
+                            <div className="fixed bottom-8 right-8 flex gap-4 no-print">
+                                <button onClick={() => window.print()} className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-xl hover:bg-blue-700 transition-all transform hover:scale-105"><Printer size={20}/> STAMPA SCHEDA</button>
+                                <button onClick={() => setViewDpia(null)} className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold shadow-xl hover:bg-slate-900 transition-all transform hover:scale-105">CHIUDI</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden print:block print:h-auto print:overflow-visible">
+                    <aside className="w-64 bg-white border-r border-slate-200 p-6 flex flex-col gap-2 shadow-sm z-50 no-print">
+                        <div className="flex items-center gap-2 mb-8 px-2"><Shield className="text-blue-600" /><div><h1 className="font-black text-lg leading-tight">C.M. Service</h1><p className="text-[10px] font-bold text-slate-400 uppercase">DPO System v40</p></div></div>
+                        <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100"><p className="text-[10px] uppercase font-bold text-slate-400">Utente</p><p className="text-xs font-bold text-blue-900 truncate">{usersConfig[currentUser]?.role}</p></div>
+                        <nav className="flex-1 space-y-1 overflow-y-auto">
+                            <SidebarItem icon={LayoutDashboard} label="Dashboard" id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={Bot} label="Tony Assistant" id="register" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={FileText} label="Valutazioni DPIA" id="dpia" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={ClipboardCheck} label="Audit / NIS2" id="audit" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={Server} label="Asset & Hardware" id="assets" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={Folder} label="Documenti" id="documents" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={TableIcon} label="Matrice RACI" id="matrix" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={BarChart3} label="Reporting ESG" id="esg" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={Calendar} label="Scadenziario" id="calendar" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={AlertTriangle} label="Data Breach" id="breach" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={FileTextIcon} label="Relazione Annuale" id="report" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={History} label="Registro Log" id="logs" activeTab={activeTab} setActiveTab={setActiveTab} />
+                            <SidebarItem icon={Archive} label="Archivio" id="archive" activeTab={activeTab} setActiveTab={setActiveTab} />
+                        </nav>
+                        <div className="mt-2 space-y-2 border-t pt-4">
+                            <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 bg-slate-800 text-white p-2 rounded-lg font-bold text-xs"><Download size={14}/> ESPORTA BACKUP</button>
+                            <button onClick={handleImportTrigger} className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-600 p-2 rounded-lg font-bold text-xs"><Upload size={14}/> IMPORTA DATI</button>
+                            <input type="file" id="importFile" className="hidden" accept=".json" onChange={handleImportFile} />
+                            <button onClick={() => window.print()} className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-600 p-2 rounded-lg font-bold text-xs hover:bg-slate-200"><Printer size={14}/> STAMPA VISTA</button>
+                            <button onClick={() => { setForcePassChange(false); setShowModal('changePass'); }} className="w-full flex items-center justify-center gap-2 bg-blue-50 text-blue-600 p-2 rounded-lg font-bold text-xs hover:bg-blue-100"><Key size={14}/> CAMBIA PASS</button>
+                            <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 p-2 rounded-lg font-bold text-xs hover:bg-red-100"><LogOut size={14}/> LOGOUT</button>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 overflow-y-auto p-10 pb-20 print:p-0 print:overflow-visible">
+                        <div className="flex justify-between items-center mb-10 no-print">
+                            <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter">{activeTab.replace('_', ' ')} <span className="text-blue-600">{selectedYear}</span></h2>
+                            <div className="flex items-center gap-4">
+                                {passwordWarning && <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg text-xs font-bold animate-pulse">{passwordWarning}</div>}
+                                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-white border px-4 py-2 rounded-xl font-bold text-blue-600">
+                                    <option value="2024">2024</option>
+                                    {Object.keys(allData).filter(y=>y!=="2024").sort().reverse().map(y => <option key={y} value={y}>{y}</option>)}
+                                    <option value={parseInt(currentYearStr)+1}>{parseInt(currentYearStr)+1}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Dashboard di Conformità" text="Monitora lo stato di adeguamento a GDPR, ISO 27001 e NIS 2. Verifica le scadenze imminenti e lo stato dei rischi."/>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                     <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col items-center justify-center">
+                                         <ComplianceGauge score={calculateComplianceScore()} />
+                                    </div>
+                                    <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col justify-between">
+                                        <div><p className="text-xs font-bold text-slate-400 uppercase mb-1">Trattamenti Censiti</p><p className="text-4xl font-black text-slate-800">{yearData.treatments?.length||0}</p></div>
+                                        <div className="mt-4 text-xs text-slate-500 font-bold">{yearData.treatments?.filter(t => t.risk === 'Alto').length} ad Alto Rischio</div>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-2xl border shadow-sm flex flex-col justify-between">
+                                        <div><p className="text-xs font-bold text-slate-400 uppercase mb-1">Conformità Audit</p><p className="text-4xl font-black text-blue-600">{yearData.auditQuestions?.length ? Math.round((yearData.auditQuestions.filter(q=>q.result==='si').length/yearData.auditQuestions.length)*100) : 0}%</p></div>
+                                        <div className="w-full bg-slate-100 rounded-full h-2 mt-4"><div className="bg-blue-600 h-2 rounded-full" style={{width: `${yearData.auditQuestions?.length ? Math.round((yearData.auditQuestions.filter(q=>q.result==='si').length/yearData.auditQuestions.length)*100) : 0}%`}}></div></div>
+                                    </div>
+                                    <div className={`bg-white p-6 rounded-2xl border shadow-sm border-b-4 ${yearData.breaches?.filter(b=>b.status!=='Chiuso').length > 0 ? 'border-b-red-500' : 'border-b-green-500'} flex flex-col justify-between`}>
+                                        <div><p className="text-xs font-bold text-slate-400 uppercase mb-1">Breach Aperti</p><p className={`text-4xl font-black ${yearData.breaches?.filter(b=>b.status!=='Chiuso').length > 0 ? 'text-red-600' : 'text-green-600'}`}>{yearData.breaches?.filter(b=>b.status!=='Chiuso').length||0}</p></div>
+                                        <div className="mt-4 text-xs text-slate-500 font-bold">Totali anno: {yearData.breaches?.length}</div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                                        <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Calendar size={18} className="text-orange-500"/> Scadenze Imminenti (30gg)</h3>
+                                        <div className="space-y-2">
+                                            {yearData.deadlines?.filter(d => checkDeadlineAlert(d.date)).length === 0 && <p className="text-slate-400 text-sm italic">Nessuna scadenza imminente.</p>}
+                                            {yearData.deadlines?.filter(d => checkDeadlineAlert(d.date)).map(d => (
+                                                <div key={d.id} className="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+                                                    <span className="font-bold text-sm text-orange-900">{d.task}</span>
+                                                    <span className="text-xs font-bold bg-orange-200 text-orange-800 px-2 py-1 rounded">{formatDate(d.date)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                                        <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2"><Activity size={18} className="text-blue-500"/> Stato Attività Recenti</h3>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                            {yearData.logs?.slice(0, 5).map(l => (
+                                                <div key={l.id} className="text-xs border-b pb-2 mb-2 last:border-0">
+                                                    <span className="font-bold text-slate-700 block">{l.action}</span>
+                                                    <span className="text-slate-500">{l.detail}</span>
+                                                    <div className="text-[10px] text-slate-400 mt-1">{l.date} - {l.user}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'register' && <div className="space-y-6"><InfoBox title="Registro dei Trattamenti (Art. 30)" text="Il Registro dei trattamenti è il documento centrale della compliance. Deve essere sempre aggiornato e contenere tutti i processi che coinvolgono dati personali. Nel campo 'Doc', inserisci i link a: Informative Privacy (Art. 13/14), Nomine a Responsabile Esterno (Art. 28) o Procedure." checklist={["Linkare le Informative consegnate","Linkare i contratti/nomine fornitori","Aggiornare se cambiano le finalità"]} gdprRef="Art. 30 GDPR"/><div className="bg-white rounded-2xl border shadow-sm overflow-hidden"><div className="p-6 border-b flex justify-between items-center bg-slate-50 no-print"><h3 className="font-bold">Registro Trattamenti</h3><div className="flex gap-2"><button onClick={loadTonySuggestions} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-indigo-700"><Bot size={16}/> TONY ASSISTANT</button><button onClick={() => { setEditItem(null); setShowModal('treatment'); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-blue-700">+ NUOVO</button></div></div><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase"><tr><th className="p-4">Attività</th><th className="p-4">Reparto</th><th className="p-4">Rischio</th><th className="p-4">Doc/Link</th><th className="p-4 text-right no-print">Azioni</th></tr></thead><tbody className="divide-y">{yearData.treatments?.map(t => (<tr key={t.id}><td className="p-4 font-bold">{t.name}</td><td className="p-4 text-slate-500">{t.dept}</td><td className="p-4"><span className={`px-2 py-1 rounded text-[10px] font-bold ${t.risk==='Alto'?'bg-red-100 text-red-700':t.risk==='Medio'?'bg-yellow-100 text-yellow-700':'bg-green-100 text-green-700'}`}>{t.risk}</span></td><td className="p-4"><SmartDocLink data={t.docLink} onOpenDpia={openDpiaFromReg}/></td><td className="p-4 text-right no-print"><div className="flex justify-end"><EditButton item={t} type="treatment" setEditItem={setEditItem} setShowModal={setShowModal} /><button onClick={() => deleteItem('treatments', t.id, `Cancellato: ${t.name}`)} className="text-slate-300 hover:text-red-600"><Trash2 size={16}/></button></div></td></tr>))}</tbody></table></div></div>}
+
+                        {activeTab === 'dpia' && <div>
+                            <InfoBox title="Valutazione d'Impatto (DPIA) - Risk Management" text="La DPIA analizza i rischi (probabilità x gravità). Per ogni rischio elevato, definisci misure di mitigazione e rivaluta il Rischio Residuo." gdprRef="Art. 35 GDPR"/>
+                            <div className="bg-white p-6 rounded-xl border mb-6"><h3 className="font-bold text-lg mb-4 text-slate-700">Matrice del Rischio (Posizionamento Residuo)</h3><RiskChart items={yearData.dpias || []} /></div>
+                            <div className="bg-white p-6 rounded-xl border"><div className="flex justify-between mb-4 no-print"><h3 className="font-bold">DPIA Registrate</h3><button onClick={() => { setEditItem(null); setShowModal('dpia'); }} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">+ NUOVA</button></div>{yearData.dpias?.map(d => (<div key={d.id} className="border p-4 rounded-lg mb-4 flex gap-4"><div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold flex-shrink-0">ID</div><div className="flex-1"><div className="flex justify-between font-bold"><span>{d.project}</span><span className={`text-${calculateRisk(d.probRes||d.prob, d.gravRes||d.grav).col}-600`}>Residuo: {d.riskScoreRes||d.riskScore} ({d.riskLevelRes||d.riskLevel})</span></div><p className="text-xs text-slate-500 mt-1">Inerente: {d.riskLevel} | Mitigazioni: {d.mitigations}</p><div className="mt-2 flex justify-between"><SmartDocLink data={`DPIA_REF:${d.project}`} onOpenDpia={openDpiaFromReg}/><div className="flex gap-2"><button onClick={() => setViewDpia(d)} className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs font-bold border">SCHEDA</button><EditButton item={d} type="dpia" setEditItem={setEditItem} setShowModal={setShowModal} /><button onClick={() => deleteItem('dpias', d.id)} className="text-red-400 no-print"><Trash2 size={14}/></button></div></div></div></div>))}</div></div>}
+
+                        {activeTab === 'audit' && (
+                            <div className="space-y-8">
+                                <InfoBox title="Attività di Controllo e Verifica" text="Esegui audit periodici per verificare la conformità a GDPR, ISO 27001 e NIS 2." gdprRef="Art. 39 par. 1 lett. b"/>
+                                <div className="flex justify-between items-center no-print bg-blue-50 p-4 rounded-xl border border-blue-200">
+                                    <div><h3 className="font-bold text-blue-900">Checklist di Verifica Conformità</h3></div>
+                                    <div className="flex gap-2">
+                                        <button onClick={loadStandardControls} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-purple-700 flex gap-2 items-center"><ClipboardCheck size={16}/> CARICA STANDARD ISO/NIS2</button>
+                                        <button onClick={() => { setEditItem(null); setShowModal('auditQuest'); }} className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-bold border border-blue-200 shadow-sm">+ NUOVA DOMANDA</button>
+                                        <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 flex gap-2 items-center"><Printer size={16}/> STAMPA VERBALE</button>
+                                    </div>
+                                </div>
+                                <div className="hidden print-only text-center border-b-2 border-black pb-4 mb-6"><h2 className="text-2xl font-black uppercase">VERBALE DI AUDIT INTERNO</h2><p>Data Verifica: {new Date().toLocaleDateString()} - Rilevatore: {usersConfig[currentUser]?.role}</p></div>
+                                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden print:border-black print:shadow-none">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-100 text-slate-600 text-xs font-bold uppercase print:bg-gray-200 print:text-black"><tr><th className="p-4 border-b w-1/3">Area / Domanda</th><th className="p-4 border-b text-center w-1/6">Esito</th><th className="p-4 border-b w-1/3">Note / Evidenze</th><th className="p-4 border-b w-1/6 no-print text-right">Azioni</th></tr></thead>
+                                        <tbody className="divide-y divide-slate-100 print:divide-gray-300">
+                                            {[...new Set(yearData.auditQuestions?.map(q => q.category) || [])].sort().map(cat => {
+                                                const catQuestions = yearData.auditQuestions?.filter(q => q.category === cat);
+                                                return (
+                                                    <React.Fragment key={cat}>
+                                                        <tr className="bg-slate-50 print:bg-gray-100"><td colSpan="4" className="p-2 font-black text-xs uppercase tracking-widest text-slate-500 pl-4">{cat}</td></tr>
+                                                        {catQuestions.map(q => (
+                                                            <tr key={q.id} className="break-inside-avoid">
+                                                                <td className="p-4 align-top"><p className="font-bold text-slate-800">{q.label}</p><span className="text-[10px] text-slate-400 no-print">{q.category}</span></td>
+                                                                <td className="p-4 align-top text-center">
+                                                                    <div className="flex flex-col gap-2 justify-center h-full no-print">
+                                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name={`res_${q.id}`} checked={q.result === 'si'} onChange={() => handleAudit(q.id, 'result', 'si')} className="accent-green-600"/> <span className="text-xs font-bold text-green-700">SI</span></label>
+                                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name={`res_${q.id}`} checked={q.result === 'no'} onChange={() => handleAudit(q.id, 'result', 'no')} className="accent-red-600"/> <span className="text-xs font-bold text-red-700">NO</span></label>
+                                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name={`res_${q.id}`} checked={q.result === 'na'} onChange={() => handleAudit(q.id, 'result', 'na')} className="accent-slate-400"/> <span className="text-xs font-bold text-slate-500">N/A</span></label>
+                                                                    </div>
+                                                                    <div className="hidden print-only font-bold border border-black p-2 text-xs">{q.result === 'si' ? 'SI [X] NO [ ] NA [ ]' : q.result === 'no' ? 'SI [ ] NO [X] NA [ ]' : 'SI [ ] NO [ ] NA [X]'}</div>
+                                                                </td>
+                                                                <td className="p-4 align-top"><textarea className="w-full border rounded p-2 text-xs h-20 print:border-none print:resize-none print:h-auto print:bg-transparent" placeholder="Inserire note obbligatorie..." value={q.note} onChange={(e) => handleAudit(q.id, 'note', e.target.value)}></textarea></td>
+                                                                <td className="p-4 align-top text-right no-print"><button onClick={() => deleteItem('auditQuestions', q.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button></td>
+                                                            </tr>
+                                                        ))}
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'assets' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Inventario Asset & Hardware (ISO 27001)" text="Tieni traccia di tutti i beni aziendali (PC, Server, Software) per garantire la sicurezza fisica e logica." />
+                                <div className="bg-white rounded-2xl border shadow-sm p-6">
+                                    <div className="flex justify-between items-center mb-4 no-print">
+                                        <h3 className="font-bold text-lg text-slate-800">Inventario Asset</h3>
+                                        <button onClick={() => { setEditItem(null); setShowModal('asset'); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold">+ NUOVO ASSET</button>
+                                    </div>
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase"><tr><th className="p-3">Nome</th><th className="p-3">Tipo</th><th className="p-3">Ubicazione</th><th className="p-3">Proprietario</th><th className="p-3 text-right">Azioni</th></tr></thead>
+                                        <tbody className="divide-y">
+                                            {(yearData.assets || []).map((a) => (
+                                                <tr key={a.id}>
+                                                    <td className="p-3 font-bold">{a.name}</td>
+                                                    <td className="p-3 text-xs uppercase bg-slate-100 rounded text-slate-600 text-center mx-2">{a.type}</td>
+                                                    <td className="p-3">{a.location}</td>
+                                                    <td className="p-3">{a.owner}</td>
+                                                    <td className="p-3 text-right no-print">
+                                                         <div className="flex justify-end gap-2">
+                                                            <EditButton item={a} type="asset" setEditItem={setEditItem} setShowModal={setShowModal} />
+                                                            <button onClick={() => deleteItem('assets', a.id, `Eliminato Asset: ${a.name}`)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'documents' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Gestione Documentale" text="Crea e archivia le Informative, le Nomine e le Policy aziendali. Un archivio ordinato è prova di compliance." />
+                                <div className="bg-white rounded-2xl border shadow-sm p-6">
+                                    <div className="flex justify-between items-center mb-4 no-print">
+                                        <h3 className="font-bold text-lg text-slate-800">Documenti Privacy</h3>
+                                        <button onClick={() => { setEditItem(null); setShowModal('document'); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold">+ NUOVO DOCUMENTO</button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {(yearData.documents || []).map((doc) => (
+                                            <div key={doc.id} className="border p-4 rounded-xl hover:shadow-md transition-shadow bg-slate-50">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="bg-white p-2 rounded border"><FileText size={20} className="text-blue-500"/></div>
+                                                    <div className="text-right">
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase block">{doc.type}</span>
+                                                        <span className="text-xs text-slate-500">{doc.date}</span>
+                                                    </div>
+                                                </div>
+                                                <h4 className="font-bold text-slate-800 mb-1">{doc.title}</h4>
+                                                <p className="text-xs text-slate-500 mb-4">Versione: {doc.version}</p>
+                                                <div className="flex gap-2">
+                                                    <a href={doc.link || "#"} target="_blank" className="flex-1 bg-blue-600 text-white text-center py-2 rounded-lg text-xs font-bold hover:bg-blue-700">APRI</a>
+                                                    <button onClick={() => deleteItem('documents', doc.id, `Eliminato Doc: ${doc.title}`)} className="px-3 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'report' && (
+                            <div className="max-w-4xl mx-auto">
+                                <InfoBox title="Guida alla Relazione Annuale" text="Genera il report finale combinando i dati inseriti. 1. Clicca su 'Genera Bozza' per importare le metriche. 2. Personalizza i commenti. 3. Stampa in PDF." gdprRef="Art. 39 GDPR (Rendicontazione)" />
+                                <div className="bg-white p-12 rounded-xl shadow-lg print:shadow-none print:p-0 font-serif">
+                                    <div className="text-center border-b-2 border-slate-800 pb-8 mb-8"><h1 className="text-3xl font-black uppercase mb-2 text-slate-900">RELAZIONE ANNUALE PRIVACY</h1><h2 className="text-xl text-slate-600">Attività del Responsabile Protezione Dati (DPO)</h2><p className="text-slate-500 mt-4 italic font-sans">Periodo di Riferimento: 01/01/{selectedYear} - 31/12/{selectedYear}</p></div>
+                                    <div className="space-y-8 text-justify leading-relaxed text-slate-800 text-sm">
+                                    <div className="bg-blue-50 p-4 rounded text-xs text-blue-700 no-print mb-4 border border-blue-200"><Info size={14} className="inline mr-1"/><strong>Modalità Modifica:</strong> I testi sottostanti sono modificabili.</div>
+                                    <section><h3 className="font-bold text-lg border-b border-slate-300 mb-3 text-blue-900">1. Premessa e Contesto Normativo</h3><textarea className="w-full h-40 p-2 border border-transparent hover:border-slate-300 rounded focus:bg-slate-50 focus:outline-none resize-y text-justify" value={yearData.reportTexts?.premessa} onChange={(e) => handleReportTextChange('premessa', e.target.value)}></textarea></section>
+                                    <section><h3 className="font-bold text-lg border-b border-slate-300 mb-3 text-blue-900">2. Attività Operative e Documentali</h3><p className="mb-2 text-slate-500 italic text-xs no-print">[Dati Automatici]: {yearData.treatments?.length} trattamenti censiti, {yearData.treatments?.filter(t => t.risk === 'Alto').length} ad alto rischio.</p><textarea className="w-full h-40 p-2 border border-transparent hover:border-slate-300 rounded focus:bg-slate-50 focus:outline-none resize-y text-justify" value={yearData.reportTexts?.attivita} onChange={(e) => handleReportTextChange('attivita', e.target.value)}></textarea></section>
+                                    <section><h3 className="font-bold text-lg border-b border-slate-300 mb-3 text-blue-900">3. Attività di Controllo e Sorveglianza</h3><p className="mb-2 text-slate-500 italic text-xs no-print">[Dati Automatici]: Conformità audit {yearData.auditQuestions?.length ? Math.round((yearData.auditQuestions.filter(q=>q.result==='si').length/yearData.auditQuestions.length)*100) : 0}%.</p><textarea className="w-full h-40 p-2 border border-transparent hover:border-slate-300 rounded focus:bg-slate-50 focus:outline-none resize-y text-justify" value={yearData.reportTexts?.controlli} onChange={(e) => handleReportTextChange('controlli', e.target.value)}></textarea></section>
+                                    <section><h3 className="font-bold text-lg border-b border-slate-300 mb-3 text-blue-900">6. Prospettive Future e Obiettivi (NIS2)</h3><textarea className="w-full h-40 p-2 border border-transparent hover:border-slate-300 rounded focus:bg-slate-50 focus:outline-none resize-y text-justify" value={yearData.reportTexts?.nis2} onChange={(e) => handleReportTextChange('nis2', e.target.value)}></textarea></section>
+                                </div>
+                                <div className="mt-16 pt-8 flex justify-between items-end no-print border-t">
+                                    <button onClick={generateReportDraft} className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-purple-700 transition-colors shadow-md"><Edit3 size={18}/> GENERA BOZZA AUTOMATICA</button>
+                                    <button onClick={() => window.print()} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-700 transition-colors shadow-md"><Printer size={18}/> STAMPA RELAZIONE</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'matrix' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Matrice di Responsabilità (RACI)" text="Definisce chiaramente chi fa cosa in ambito Privacy e Sicurezza (ISO 27001 / NIS 2). R=Responsible (Esegue), A=Accountable (Approva), C=Consulted (Consultato), I=Informed (Informato)." gdprRef="Principio di Accountability" />
+                                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden p-6">
+                                    <div className="flex justify-between items-center mb-4 no-print">
+                                        <h3 className="font-bold text-lg text-slate-800">Matrice RACI</h3>
+                                        <button onClick={() => { setEditItem(null); setShowModal('raci'); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold">+ NUOVA ATTIVITÀ</button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs min-w-[600px]">
+                                            <thead className="bg-slate-50 uppercase font-bold text-slate-500 border-b">
+                                                <tr>
+                                                    <th className="p-3 w-1/3">Attività / Processo</th>
+                                                    <th className="p-3 text-center bg-blue-50 text-blue-800">Responsible (Esegue)</th>
+                                                    <th className="p-3 text-center bg-red-50 text-red-800">Accountable (Approva)</th>
+                                                    <th className="p-3 text-center bg-green-50 text-green-800">Consulted (Aiuta)</th>
+                                                    <th className="p-3 text-center bg-yellow-50 text-yellow-800">Informed (Nota)</th>
+                                                    <th className="p-3 text-right no-print">Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {(yearData.raciItems || []).map((item) => (
+                                                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                                        <td className="p-3 font-bold text-slate-700">{item.task}</td>
+                                                        <td className="p-3 text-center font-mono font-bold">{item.r}</td>
+                                                        <td className="p-3 text-center font-mono font-bold">{item.a}</td>
+                                                        <td className="p-3 text-center font-mono font-bold">{item.c}</td>
+                                                        <td className="p-3 text-center font-mono font-bold">{item.i}</td>
+                                                        <td className="p-3 text-right no-print">
+                                                            <div className="flex justify-end gap-2">
+                                                                <EditButton item={item} type="raci" setEditItem={setEditItem} setShowModal={setShowModal} />
+                                                                <button onClick={() => deleteItem('raciItems', item.id, `Eliminato RACI: ${item.task}`)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'logs' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Registro dei Log (Audit Trail)" text="Traccia ogni modifica ai dati per garantire l'integrità e la non ripudiabilità (Accountability / ISO 27001)." gdprRef="Art. 5 par. 2 GDPR" />
+                                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                                    <div className="p-6 bg-slate-50 border-b flex justify-between items-center no-print">
+                                        <div><h3 className="font-bold">Registro delle Operazioni</h3></div>
+                                        <button onClick={() => window.print()} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-xs flex gap-2"><Printer size={16}/> STAMPA LOG</button>
+                                    </div>
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-100 text-xs font-bold text-slate-500 uppercase"><tr><th className="p-4">Data/Ora</th><th className="p-4">Utente</th><th className="p-4">Azione</th><th className="p-4">Dettaglio</th></tr></thead>
+                                        <tbody className="divide-y">{yearData.logs?.map(l => (<tr key={l.id} className="hover:bg-slate-50"><td className="p-4 whitespace-nowrap text-slate-500 text-xs">{l.date}</td><td className="p-4 font-bold text-slate-700">{l.user}</td><td className="p-4 text-blue-600 font-bold">{l.action}</td><td className="p-4">{l.detail}</td></tr>))}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'esg' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Metriche ESG & Compliance" text="Monitora i KPI (Key Performance Indicators) relativi alla formazione privacy e alla qualifica dei fornitori." />
+                                <div className="bg-white rounded-2xl border shadow-sm p-6">
+                                    <div className="flex justify-between mb-6 no-print"><h3 className="font-bold">ESG Metrics</h3><button onClick={() => { setEditItem(null); setShowModal('esgEdit'); }} className="text-blue-600 text-xs font-bold"><Edit3/></button></div>
+                                    <div className="space-y-4">
+                                        <div><p className="text-xs font-bold uppercase text-slate-400">Formazione</p><div className="h-4 bg-slate-100 rounded overflow-hidden"><div style={{width: `${yearData.esgMetrics?.training}%`}} className="h-full bg-blue-600"></div></div><p className="text-right font-bold">{yearData.esgMetrics?.training}%</p></div>
+                                        <div><p className="text-xs font-bold uppercase text-slate-400">Audit Fornitori</p><div className="h-4 bg-slate-100 rounded overflow-hidden"><div style={{width: `${yearData.esgMetrics?.supplierAudit}%`}} className="h-full bg-green-600"></div></div><p className="text-right font-bold">{yearData.esgMetrics?.supplierAudit}%</p></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'calendar' && (
+                            <div className="space-y-6">
+                                <InfoBox title="Scadenziario Adempimenti" text="Gestisci le scadenze ricorrenti e puntuali. Usa il caricamento standard per inserire le scadenze obbligatorie annuali." gdprRef="Principio di Accountability" />
+                                <div className="bg-white rounded-2xl border shadow-sm p-6">
+                                    <div className="flex justify-between mb-6 no-print">
+                                        <h3 className="font-bold text-lg text-slate-800">Calendario Scadenze</h3>
+                                        <div className="flex gap-2">
+                                            <button onClick={loadStandardDeadlines} className="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2"><Calendar size={14}/> CARICA STANDARD</button>
+                                            <button onClick={() => { setEditItem(null); setShowModal('deadline'); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold">+ SCADENZA</button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {yearData.deadlines?.sort((a,b) => new Date(a.date) - new Date(b.date)).map(d => {
+                                            const isUrgent = checkDeadlineAlert(d.date);
+                                            return (
+                                                <div key={d.id} className={`flex justify-between items-center p-4 rounded-lg border transition-all ${isUrgent ? 'bg-orange-50 border-orange-200 shadow-sm' : 'bg-slate-50 border-slate-200'}`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-2 h-2 rounded-full ${isUrgent ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`}></div>
+                                                        <div>
+                                                            <span className={`font-bold text-sm block ${isUrgent ? 'text-orange-900' : 'text-slate-700'}`}>{d.task}</span>
+                                                            <span className="text-[10px] uppercase font-bold text-slate-400">{d.priority} Priorità</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className={`font-mono font-bold text-sm ${isUrgent ? 'text-orange-700' : 'text-slate-600'}`}>{formatDate(d.date)}</span>
+                                                        <div className="flex gap-2 no-print">
+                                                            <EditButton item={d} type="deadline" setEditItem={setEditItem} setShowModal={setShowModal} />
+                                                            <button onClick={() => deleteItem('deadlines', d.id, `Scadenza: ${d.task}`)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {(!yearData.deadlines || yearData.deadlines.length === 0) && <p className="text-center text-slate-400 italic py-8">Nessuna scadenza inserita.</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'archive' && <div className="grid grid-cols-4 gap-4">{Object.keys(allData).filter(y => y !== currentYearStr).sort().reverse().map(y => (<button key={y} onClick={() => {setSelectedYear(y); setActiveTab('dashboard');}} className={`p-6 rounded-xl border font-bold ${y===selectedYear?'bg-blue-600 text-white':'bg-white'}`}>{y}</button>))}</div>}
+
+                    </main>
+
+                    {showModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm no-print">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+                                <div className="flex justify-between items-center mb-6"><h3 className="font-black text-xl uppercase">{showModal === 'changePass' ? 'Sicurezza' : editItem ? 'Modifica Dato' : 'Nuovo Dato'}</h3><button onClick={() => { if(!forcePassChange) setShowModal(null); }}><X/></button></div>
+
+                                {showModal === 'changePass' && <form onSubmit={handleChangePassword}><div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-xs mb-4">Cambio password obbligatorio ogni 6 mesi.</div>{!forcePassChange && <input name="oldP" type="password" required className="w-full border p-3 rounded-xl mb-3" placeholder="Vecchia Password"/>}<input name="newP" type="password" required className="w-full border p-3 rounded-xl mb-3" placeholder="Nuova Password"/><input name="confP" type="password" required className="w-full border p-3 rounded-xl mb-6" placeholder="Conferma Password"/><button className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl">SALVA</button></form>}
+
+                                {showModal === 'treatment' && <form onSubmit={(e)=>{e.preventDefault();const fd=new FormData(e.target);const item={name:fd.get('n'),dept:fd.get('d'),risk:fd.get('r'),docLink:fd.get('l')}; if(editItem) updateItem('treatments',{...editItem, ...item},`Modifica Trattamento: ${item.name}`); else addItem('treatments',item,`Nuovo Trattamento: ${item.name}`);}}><input name="n" defaultValue={editItem?.name} required className="w-full border p-2 rounded mb-2" placeholder="Attività"/><select name="d" defaultValue={editItem?.dept || ""} required className="w-full border p-2 rounded mb-2"><option value="" disabled>Seleziona Reparto</option>{CM_DEPARTMENTS.map(d=><option key={d} value={d}>{d}</option>)}</select><select name="r" defaultValue={editItem?.risk} className="w-full border p-2 rounded mb-2"><option>Basso</option><option>Medio</option><option>Alto</option></select><input name="l" defaultValue={editItem?.docLink} className="w-full border p-2 rounded mb-4" placeholder="Link Doc"/><button className="w-full bg-blue-600 text-white font-bold py-2 rounded">SALVA</button></form>}
+
+                                {showModal === 'asset' && <form onSubmit={(e)=>{e.preventDefault();const fd=new FormData(e.target);const item={name:fd.get('n'),type:fd.get('t'),location:fd.get('l'),owner:fd.get('o')}; if(editItem) updateItem('assets',{...editItem, ...item},`Modifica Asset`); else addItem('assets',item,`Nuovo Asset`);}}><input name="n" defaultValue={editItem?.name} required className="w-full border p-2 rounded mb-2" placeholder="Nome Asset"/><select name="t" defaultValue={editItem?.type} className="w-full border p-2 rounded mb-2"><option>Hardware</option><option>Software</option><option>Servizio Cloud</option><option>Altro</option></select><input name="l" defaultValue={editItem?.location} required className="w-full border p-2 rounded mb-2" placeholder="Ubicazione"/><input name="o" defaultValue={editItem?.owner} required className="w-full border p-2 rounded mb-4" placeholder="Proprietario/Custode"/><button className="w-full bg-blue-600 text-white font-bold py-2 rounded">SALVA</button></form>}
+
+                                {showModal === 'document' && <form onSubmit={(e)=>{e.preventDefault();const fd=new FormData(e.target);const item={title:fd.get('t'),type:fd.get('ty'),version:fd.get('v'),date:fd.get('d'),link:fd.get('l')}; if(editItem) updateItem('documents',{...editItem, ...item},`Modifica Doc`); else addItem('documents',item,`Nuovo Doc`);}}><input name="t" defaultValue={editItem?.title} required className="w-full border p-2 rounded mb-2" placeholder="Titolo Documento"/><select name="ty" defaultValue={editItem?.type} className="w-full border p-2 rounded mb-2"><option>Informativa</option><option>Nomina</option><option>Policy</option><option>Procedura</option></select><div className="flex gap-2"><input name="v" defaultValue={editItem?.version} required className="w-1/2 border p-2 rounded mb-2" placeholder="Versione (es. 1.0)"/><input name="d" type="date" defaultValue={editItem?.date} required className="w-1/2 border p-2 rounded mb-2"/></div><input name="l" defaultValue={editItem?.link} className="w-full border p-2 rounded mb-4" placeholder="Link Google Drive / SharePoint"/><button className="w-full bg-blue-600 text-white font-bold py-2 rounded">SALVA</button></form>}
+
+                                {showModal === 'auditQuest' && <form onSubmit={(e)=>{e.preventDefault();const fd=new FormData(e.target);const item={category:fd.get('c'),label:fd.get('l'),docLink:fd.get('l_doc')}; if(editItem) updateItem('auditQuestions',{...editItem, ...item},`Modifica Domanda Audit`); else addItem('auditQuestions',{...item, result:'na', note:""},`Nuova Domanda Audit`);}}><input name="c" defaultValue={editItem?.category} required className="w-full border p-2 rounded mb-2" placeholder="Categoria"/><textarea name="l" defaultValue={editItem?.label} required className="w-full border p-2 rounded mb-2" placeholder="Domanda..."></textarea><input name="l_doc" defaultValue={editItem?.docLink} className="w-full border p-2 rounded mb-4" placeholder="Link Doc"/><button className="w-full bg-blue-600 text-white font-bold py-2 rounded">SALVA</button></form>}
+
+                                {showModal === 'breach' && <form onSubmit={(e)=>{
+                                    e.preventDefault();
+                                    const fd=new FormData(e.target);
+                                    const protocol = fd.get('id') || `DB-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*1000)}`;
+                                    const item = {
+                                        protocol: editItem ? editItem.protocol : protocol,
+                                        detectionDate: fd.get('d'),
+                                        incidentDate: fd.get('di'),
+                                        description: fd.get('desc'),
+                                        nature: fd.get('nat'),
+                                        dataTypes: fd.get('types'),
+                                        subjects: fd.get('sub'),
+                                        consequences: fd.get('cons'),
+                                        measures: fd.get('meas'),
+                                        garante: fd.get('gar') === 'on',
+                                        usersNotified: fd.get('usr') === 'on',
+                                        status: editItem ? editItem.status : 'Aperto',
+                                        docLink: fd.get('l')
+                                    };
+                                    if(editItem) updateItem('breaches', {...editItem, ...item}, `Modifica Breach ${item.protocol}`);
+                                    else addItem('breaches', item, `Breach Registrato: ${protocol}`);
+                                }}>
+                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                        <div><label className="text-[10px] uppercase font-bold text-slate-500">Protocollo (ID)</label><input name="id" defaultValue={editItem?.protocol} className="w-full border p-2 rounded text-xs" placeholder="Auto-generato" disabled={!!editItem}/></div>
+                                        <div><label className="text-[10px] uppercase font-bold text-slate-500">Data Rilevamento</label><input name="d" defaultValue={editItem?.detectionDate} type="datetime-local" required className="w-full border p-2 rounded text-xs"/></div>
+                                    </div>
+                                    <label className="text-[10px] uppercase font-bold text-slate-500">Natura Violazione</label>
+                                    <select name="nat" defaultValue={editItem?.nature} className="w-full border p-2 rounded mb-2 text-sm"><option>Accesso non autorizzato</option><option>Divulgazione non autorizzata</option><option>Perdita</option><option>Distruzione</option><option>Modifica</option><option>Furto Dispositivo</option><option>Altro</option></select>
+                                    <textarea name="desc" defaultValue={editItem?.description} required className="w-full border p-2 rounded mb-2 h-16 text-sm" placeholder="Descrizione..."></textarea>
+                                    <div className="grid grid-cols-2 gap-2 mb-2"><input name="types" defaultValue={editItem?.dataTypes} required className="w-full border p-2 rounded text-sm" placeholder="Tipi Dati"/><input name="sub" defaultValue={editItem?.subjects} required className="w-full border p-2 rounded text-sm" placeholder="N. Interessati"/></div>
+                                    <textarea name="meas" defaultValue={editItem?.measures} className="w-full border p-2 rounded mb-2 h-12 text-sm" placeholder="Misure Correttive..."></textarea>
+                                    <input name="l" defaultValue={editItem?.docLink} className="w-full border p-2 rounded mb-4 text-sm" placeholder="Link Report"/><div className="flex gap-4 mb-4 bg-slate-50 p-3 rounded border"><label className="flex items-center gap-2 cursor-pointer text-sm"><input name="gar" type="checkbox" defaultChecked={editItem?.garante} className="w-4 h-4"/> Notifica Garante</label><label className="flex items-center gap-2 cursor-pointer text-sm"><input name="usr" type="checkbox" defaultChecked={editItem?.usersNotified} className="w-4 h-4"/> Notifica Interessati</label></div><button className="w-full bg-red-600 text-white font-bold py-2 rounded-xl">SALVA VIOLAZIONE</button></form>}
+
+                                {showModal === 'deadline' && <form onSubmit={(e)=>{e.preventDefault();const fd=new FormData(e.target);const item={task:fd.get('t'),date:fd.get('d')}; if(editItem) updateItem('deadlines',{...editItem, ...item},`Modifica Scadenza`); else addItem('deadlines',item,`Nuova Scadenza`);}}><input name="t" defaultValue={editItem?.task} required className="w-full border p-2 rounded mb-2" placeholder="Attività"/><input name="d" defaultValue={editItem?.date} type="date" required className="w-full border p-2 rounded mb-4"/><button className="w-full bg-blue-600 text-white font-bold py-2 rounded">SALVA</button></form>}
+
+                                {showModal === 'dpia' && <form onSubmit={(e)=>{e.preventDefault();const fd=new FormData(e.target);const p=parseInt(fd.get('p')),g=parseInt(fd.get('g')),risk=calculateRisk(p,g);const pRes=parseInt(fd.get('pRes')),gRes=parseInt(fd.get('gRes')),riskRes=calculateRisk(pRes,gRes);const item={project:fd.get('n'),dept:fd.get('d'),date:editItem ? editItem.date : new Date().toISOString(),prob:p,grav:g,riskScore:risk.sc,riskLevel:risk.lvl,probRes:pRes,gravRes:gRes,riskScoreRes:riskRes.sc,riskLevelRes:riskRes.lvl,status:editItem?editItem.status:"In Corso",mitigations:fd.get('m'),docLink:fd.get('l'), reviewDate: fd.get('rd'), standardsRef: fd.get('std')}; if(editItem) updateItem('dpias',{...editItem, ...item},`Modifica DPIA: ${item.project}`); else addItem('dpias',item,`Nuova DPIA: ${item.project}`);}}><input name="n" defaultValue={editItem?.project} required className="w-full border p-2 rounded mb-2" placeholder="Progetto / Trattamento"/><select name="d" defaultValue={editItem?.dept || ""} required className="w-full border p-2 rounded mb-2"><option value="" disabled>Seleziona Reparto</option>{CM_DEPARTMENTS.map(d=><option key={d} value={d}>{d}</option>)}</select><div className="flex gap-2 mb-2"><div className="w-1/2"><label className="text-[10px] font-bold uppercase text-slate-500">Probabilità Inerente <HelpIcon text="1=Improbabile, 4=Molto Probabile"/></label><select name="p" defaultValue={editItem?.prob} className="border p-2 rounded w-full text-sm"><option value="1">1 - Improbabile</option><option value="2">2 - Poco Prob.</option><option value="3">3 - Probabile</option><option value="4">4 - Molto Prob.</option></select></div><div className="w-1/2"><label className="text-[10px] font-bold uppercase text-slate-500">Gravità Inerente <HelpIcon text="1=Minore, 4=Rilevante"/></label><select name="g" defaultValue={editItem?.grav} className="border p-2 rounded w-full text-sm"><option value="1">1 - Minore</option><option value="2">2 - Moderato</option><option value="3">3 - Significativo</option><option value="4">4 - Rilevante</option></select></div></div><textarea name="m" defaultValue={editItem?.mitigations} className="w-full border p-2 rounded mb-2 h-20 text-sm" placeholder="Misure di mitigazione..."></textarea><div className="flex gap-2 mb-2 bg-green-50 p-2 rounded"><div className="w-1/2"><label className="text-[10px] font-bold uppercase text-green-700">Probabilità Residua</label><select name="pRes" defaultValue={editItem?.probRes || 1} className="border p-2 rounded w-full text-sm"><option value="1">1 - Improbabile</option><option value="2">2 - Poco Prob.</option><option value="3">3 - Probabile</option><option value="4">4 - Molto Prob.</option></select></div><div className="w-1/2"><label className="text-[10px] font-bold uppercase text-green-700">Gravità Residua</label><select name="gRes" defaultValue={editItem?.gravRes || 1} className="border p-2 rounded w-full text-sm"><option value="1">1 - Minore</option><option value="2">2 - Moderato</option><option value="3">3 - Significativo</option><option value="4">4 - Rilevante</option></select></div></div><div className="grid grid-cols-2 gap-2 mb-2"><div><label className="text-[10px] font-bold uppercase text-slate-500">Prossima Revisione</label><input name="rd" type="date" defaultValue={editItem?.reviewDate} className="w-full border p-2 rounded text-sm"/></div><div><label className="text-[10px] font-bold uppercase text-slate-500">Standard Riferimento</label><input name="std" defaultValue={editItem?.standardsRef} className="w-full border p-2 rounded text-sm" placeholder="es. ISO 27001"/></div></div><input name="l" defaultValue={editItem?.docLink} className="w-full border p-2 rounded mb-4 text-sm" placeholder="Link DPIA"/><button className="w-full bg-blue-600 text-white font-bold py-2 rounded">SALVA DPIA</button></form>}
+
+                                {showModal === 'esgEdit' && <div className="space-y-4"><div><label className="text-xs font-bold">Formazione (%)</label><input type="range" min="0" max="100" value={yearData.esgMetrics?.training} onChange={(e) => handleEsgChange('training', e.target.value)} className="w-full"/></div><div><label className="text-xs font-bold">Audit Fornitori (%)</label><input type="range" min="0" max="100" value={yearData.esgMetrics?.supplierAudit} onChange={(e) => handleEsgChange('supplierAudit', e.target.value)} className="w-full"/></div><button onClick={() => setShowModal(null)} className="w-full bg-slate-900 text-white font-bold py-2 rounded">CHIUDI</button></div>}
+
+                                {showModal === 'raci' && <form onSubmit={(e)=>{
+                                    e.preventDefault();
+                                    const fd=new FormData(e.target);
+                                    const item={task:fd.get('t'),r:fd.get('r'),a:fd.get('a'),c:fd.get('c'),i:fd.get('i')};
+                                    if(editItem) updateItem('raciItems',{...editItem, ...item},`Modifica RACI: ${item.task}`);
+                                    else addItem('raciItems',item,`Nuovo Task RACI: ${item.task}`);
+                                }}>
+                                    <div className="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded mb-4">Definisci i ruoli per l'attività. R=Responsible, A=Accountable, C=Consulted, I=Informed.</div>
+                                    <input name="t" defaultValue={editItem?.task} required className="w-full border p-2 rounded mb-3 font-bold" placeholder="Descrizione Attività"/>
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div><label className="text-[10px] font-bold text-slate-500">RESPONSIBLE (Chi fa)</label><input name="r" defaultValue={editItem?.r} required className="w-full border p-2 rounded text-sm" placeholder="es. IT Manager"/></div>
+                                        <div><label className="text-[10px] font-bold text-slate-500">ACCOUNTABLE (Chi approva)</label><input name="a" defaultValue={editItem?.a} required className="w-full border p-2 rounded text-sm" placeholder="es. Direzione"/></div>
+                                        <div><label className="text-[10px] font-bold text-slate-500">CONSULTED (Chi aiuta)</label><input name="c" defaultValue={editItem?.c} className="w-full border p-2 rounded text-sm" placeholder="es. DPO"/></div>
+                                        <div><label className="text-[10px] font-bold text-slate-500">INFORMED (Chi sa)</label><input name="i" defaultValue={editItem?.i} className="w-full border p-2 rounded text-sm" placeholder="es. Dipendenti"/></div>
+                                    </div>
+                                    <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">SALVA ATTIVITÀ</button>
+                                </form>}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
