@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSME Tool - Bilancio di Sostenibilità</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+        }
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import {
+            Save, Trash2, Upload, Download, PieChart, FileText,
+            Leaf, Users, Scale, Activity, ChevronRight, AlertCircle,
+            Droplet, Factory, ShieldAlert, Target, Globe, BookOpen, Printer,
+            MapPin, Plus, X
+        } from 'lucide-react';
+
+        // --- STILI UTILITY (Tailwind) ---
+        const styles = {
+            inputField: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2",
+            labelField: "block text-sm font-medium text-gray-700 mt-4 mb-1",
+            sectionTitle: "text-xl font-bold text-emerald-800 mb-4 border-b border-emerald-200 pb-2",
+            subSectionTitle: "text-lg font-semibold text-gray-800 mt-6 mb-2",
+            calcBox: "bg-emerald-50 p-4 rounded-lg border border-emerald-200 mt-2 text-sm text-emerald-800",
+            navBtn: "w-full text-left px-4 py-2 hover:bg-emerald-700 hover:text-white transition-colors rounded mb-1 text-sm flex items-center justify-between",
+            navBtnActive: "bg-emerald-800 text-white font-bold",
+            reportSection: "mb-8",
+            reportTitle: "text-2xl font-bold text-gray-900 mb-4 mt-8 border-b pb-2",
+            reportSubTitle: "text-xl font-semibold text-gray-800 mb-2 mt-4",
+            reportText: "text-gray-700 leading-relaxed mb-4 text-justify",
+            printHidden: "print:hidden"
+        };
+
+        // --- STRUTTURA DATI INIZIALE ---
+        const initialData = {
+            meta: {
+                lastSaved: null,
+                projectName: "Nuovo Bilancio VSME"
+            },
+            // MODULO BASE
+            b1: {
+                option: "A", // A: Base, B: Base+Completo
+                consolidated: "individual",
+                legalForm: "",
+                naceCode: "",
+                assets: 0,
+                revenue: 0,
+                employees: 0,
+                country: "",
+                certifications: "", // Nuova: Certificazioni di sostenibilità
+                sites: []  // Nuova struttura: Array di oggetti { address, zip, city, country, coords, type }
+            },
+            b2: {
+                climate: { practice: false, policy: false, target: false },
+                pollution: { practice: false, policy: false, target: false },
+                water: { practice: false, policy: false, target: false },
+                biodiversity: { practice: false, policy: false, target: false },
+                circular: { practice: false, policy: false, target: false },
+                workforce: { practice: false, policy: false, target: false },
+                valueChain: { practice: false, policy: false, target: false },
+                communities: { practice: false, policy: false, target: false },
+                consumers: { practice: false, policy: false, target: false },
+                governance: { practice: false, policy: false, target: false }
+            },
+            b3: {
+                energyRenewable: 0,
+                energyNonRenewable: 0,
+                scope1: 0,
+                scope2: 0
+            },
+            b4: {
+                pollutants: ""
+            },
+            b5: {
+                sitesInSensitiveAreas: 0,
+                areaInSensitiveAreas: 0,
+                sealedArea: 0,
+                natureOrientedArea: 0
+            },
+            b6: {
+                waterWithdrawal: 0,
+                waterWithdrawalStress: 0,
+                waterConsumption: 0
+            },
+            b7: {
+                circularEconomyDesc: "",
+                wasteHazardous: 0,
+                wasteNonHazardous: 0,
+                wasteRecycled: 0
+            },
+            b8: {
+                employeesPerm: 0,
+                employeesTemp: 0,
+                employeesMale: 0,
+                employeesFemale: 0,
+                employeesLeft: 0,
+                turnoverRate: 0
+            },
+            b9: {
+                injuries: 0,
+                hoursWorked: 0,
+                fatalities: 0
+            },
+            b10: {
+                minWageCompliant: "Sì",
+                maleHourlyRate: 0,
+                femaleHourlyRate: 0,
+                collectiveBargaining: 0,
+                trainingHoursMale: 0,
+                trainingHoursFemale: 0
+            },
+            b11: {
+                corruptionConvictions: 0,
+                corruptionFines: 0
+            },
+            // MODULO COMPLETO
+            c1: {
+                products: "",
+                markets: "",
+                relationships: "",
+                strategySustainability: ""
+            },
+            c2: {
+                climateDesc: "",
+                pollutionDesc: "",
+                waterDesc: "",
+                biodiversityDesc: "",
+                circularDesc: "",
+                workforceDesc: "",
+                valueChainDesc: "",
+                communitiesDesc: "",
+                consumersDesc: "",
+                governanceDesc: ""
+            },
+            c3: {
+                targetYear: "",
+                baseYear: "",
+                targetScope1: "",
+                targetScope2: "",
+                actions: ""
+            },
+            c4: {
+                hazards: "",
+                adaptationActions: "No"
+            },
+            c5: {
+                womenInManagement: 0,
+                menInManagement: 0,
+                tempWorkers: 0
+            },
+            c6: {
+                humanRightsPolicy: "No",
+                grievanceMechanism: "No",
+                topicsCovered: []
+            },
+            c7: {
+                incidents: "No",
+                actionsTaken: ""
+            },
+            c8: {
+                revenueWeapons: 0,
+                revenueTobacco: 0,
+                revenueFossil: 0,
+                revenueChemicals: 0,
+                excludedFromBenchmarks: "No"
+            },
+            c9: {
+                boardMembersFemale: 0,
+                boardMembersMale: 0
+            }
+        };
+
+        // --- COMPONENTI UTILITY ---
+        const Alert = ({ children, type = "info" }) => (
+            <div className={`p-4 mb-4 rounded-md flex items-start gap-3 ${type === 'warning' ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-800'}`}>
+                <AlertCircle size={20} className="mt-0.5 shrink-0" />
+                <div className="text-sm">{children}</div>
+            </div>
+        );
+
+        const SectionHeader = ({ title, code }) => (
+            <div className="flex items-center gap-2 mb-6">
+                <span className="bg-emerald-600 text-white font-bold py-1 px-3 rounded text-sm">{code}</span>
+                <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+            </div>
+        );
+
+        // --- COMPONENTE REPORT NARRATIVO (NUOVO) ---
+
+        const NarrativeReport = ({ data }) => {
+            const today = new Date().toLocaleDateString('it-IT');
+
+            // Helper per formattare numeri
+            const fmt = (num) => num ? num.toLocaleString('it-IT') : "0";
+
+            // Calcoli al volo
+            const totalEnergy = (data.b3.energyRenewable || 0) + (data.b3.energyNonRenewable || 0);
+            const renewableShare = totalEnergy > 0 ? ((data.b3.energyRenewable / totalEnergy) * 100).toFixed(1) : 0;
+            const totalGHG = (data.b3.scope1 || 0) + (data.b3.scope2 || 0);
+            const intensity = data.b1.revenue > 0 ? (totalGHG / data.b1.revenue).toFixed(6) : "N/A";
+            const genderGap = data.b10.maleHourlyRate > 0 ? (((data.b10.maleHourlyRate - data.b10.femaleHourlyRate) / data.b10.maleHourlyRate) * 100).toFixed(1) : "N/A";
+
+            return (
+                <div className="bg-white p-10 max-w-4xl mx-auto shadow-lg print:shadow-none print:w-full">
+                    <div className="flex justify-between items-start mb-8 border-b pb-4">
+                        <div>
+                            <h1 className="text-4xl font-bold text-emerald-900">Bilancio di Sostenibilità</h1>
+                            <p className="text-gray-600 mt-2">Standard VSME - Voluntary SME Standard</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="font-bold">{data.meta.projectName}</p>
+                            <p className="text-sm text-gray-500">Data: {today}</p>
+                            <button onClick={() => window.print()} className={`mt-4 bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-blue-700 ${styles.printHidden}`}>
+                                <Printer size={16}/> Stampa / PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* SEZIONE B1 */}
+                    <div className={styles.reportSection}>
+                        <h2 className={styles.reportTitle}>1. Profilo Aziendale</h2>
+                        <p className={styles.reportText}>
+                            La presente rendicontazione è stata redatta in conformità con lo standard VSME, optando per il
+                            <strong> {data.b1.option === 'A' ? "Modulo Base" : "Modulo Base e Modulo Completo"}</strong>.
+                        </p>
+                        <p className={styles.reportText}>
+                            L'impresa, operante con codice NACE <strong>{data.b1.naceCode || "[N/A]"}</strong> e forma giuridica <strong>{data.b1.legalForm || "[N/A]"}</strong>,
+                            ha registrato nell'anno di riferimento ricavi pari a <strong>{fmt(data.b1.revenue)}</strong> unità monetarie,
+                            avvalendosi di una forza lavoro composta da <strong>{fmt(data.b1.employees)}</strong> dipendenti (FTE).
+                        </p>
+                        {data.b1.sites.length > 0 && (
+                             <div className="mb-4">
+                                <h4 className="font-bold text-gray-800 mb-2">Sedi Operative:</h4>
+                                <ul className="list-disc pl-5">
+                                    {data.b1.sites.map((site, index) => (
+                                        <li key={index} className="text-sm text-gray-700">
+                                            <strong>{site.type || 'Sede'}:</strong> {site.address}, {site.city} ({site.country})
+                                            {site.coords && <span className="text-xs text-gray-500 ml-2">[{site.coords}]</span>}
+                                        </li>
+                                    ))}
+                                </ul>
+                             </div>
+                        )}
+                        {data.c1.strategySustainability && (
+                            <div className="bg-gray-50 p-4 rounded border-l-4 border-emerald-500 italic mb-4">
+                                "{data.c1.strategySustainability}"
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SEZIONE AMBIENTALE */}
+                    <div className={styles.reportSection}>
+                        <h2 className={styles.reportTitle}>2. Responsabilità Ambientale</h2>
+
+                        <h3 className={styles.reportSubTitle}>Energia ed Emissioni (B3)</h3>
+                        <p className={styles.reportText}>
+                            Il consumo energetico totale è stato di <strong>{fmt(totalEnergy)} MWh</strong>, di cui il <strong>{renewableShare}%</strong> proveniente da fonti rinnovabili.
+                        </p>
+                        <p className={styles.reportText}>
+                            In termini di impatto climatico, l'azienda ha emesso un totale di <strong>{fmt(totalGHG)} tCO2eq</strong> (Scope 1: {fmt(data.b3.scope1)}, Scope 2: {fmt(data.b3.scope2)}).
+                            L'intensità delle emissioni rispetto al fatturato è pari a <strong>{intensity}</strong> tCO2eq per unità monetaria.
+                        </p>
+
+                        {data.b1.option === 'B' && data.c3.targetYear && (
+                            <p className={styles.reportText}>
+                                <strong>Obiettivi Climatici (C3):</strong> L'azienda si è posta l'obiettivo di ridurre le emissioni entro il {data.c3.targetYear} (Anno Base: {data.c3.baseYear}).
+                                {data.c3.actions && ` Azioni previste: ${data.c3.actions}.`}
+                            </p>
+                        )}
+
+                        {(data.b4.pollutants || data.b6.waterWithdrawal > 0 || data.b7.wasteHazardous > 0) && (
+                            <>
+                                <h3 className={styles.reportSubTitle}>Inquinamento, Acqua e Rifiuti (B4-B7)</h3>
+                                <ul className="list-disc pl-5 space-y-1 text-gray-700 mb-4">
+                                    {data.b4.pollutants && <li><strong>Inquinanti:</strong> {data.b4.pollutants}</li>}
+                                    {data.b6.waterWithdrawal > 0 && <li><strong>Prelievo Idrico:</strong> {fmt(data.b6.waterWithdrawal)} m3 (di cui {fmt(data.b6.waterWithdrawalStress)} m3 in aree a stress idrico).</li>}
+                                    <li><strong>Rifiuti:</strong> Prodotti {fmt(data.b7.wasteHazardous + data.b7.wasteNonHazardous)} tonnellate di rifiuti, di cui {fmt(data.b7.wasteRecycled)} avviati a riciclo/recupero.</li>
+                                </ul>
+                            </>
+                        )}
+                    </div>
+
+                    {/* SEZIONE SOCIALE */}
+                    <div className={styles.reportSection}>
+                        <h2 className={styles.reportTitle}>3. Responsabilità Sociale</h2>
+
+                        <h3 className={styles.reportSubTitle}>Forza Lavoro e Parità (B8-B10)</h3>
+                        <p className={styles.reportText}>
+                            La forza lavoro è composta da {fmt(data.b8.employeesMale)} uomini e {fmt(data.b8.employeesFemale)} donne.
+                            {data.b8.employeesPerm > 0 && ` I contratti a tempo indeterminato sono ${fmt(data.b8.employeesPerm)}.`}
+                        </p>
+                        <p className={styles.reportText}>
+                            Il divario retributivo di genere (Gender Pay Gap) calcolato è del <strong>{genderGap}%</strong>.
+                            {data.b10.minWageCompliant === "Sì" ? " L'azienda dichiara il rispetto dei salari minimi adeguati." : " Attenzione: Verificare compliance salari minimi."}
+                        </p>
+
+                        <h3 className={styles.reportSubTitle}>Salute e Sicurezza (B9)</h3>
+                        <p className={styles.reportText}>
+                            Sono stati registrati <strong>{data.b9.injuries}</strong> infortuni su un totale di {fmt(data.b9.hoursWorked)} ore lavorate.
+                        </p>
+                    </div>
+
+                    {/* SEZIONE GOVERNANCE */}
+                    <div className={styles.reportSection}>
+                        <h2 className={styles.reportTitle}>4. Governance e Condotta</h2>
+                        <p className={styles.reportText}>
+                            L'azienda dichiara {data.b11.corruptionConvictions} condanne definitive per corruzione o concussione nell'anno di riferimento.
+                        </p>
+                        {data.b1.option === 'B' && (
+                            <>
+                                <p className={styles.reportText}>
+                                    La composizione dell'organo di governo vede la presenza di {data.c9.boardMembersFemale} donne e {data.c9.boardMembersMale} uomini.
+                                </p>
+                                {data.c8.excludedFromBenchmarks === "Sì" && (
+                                    <p className="text-red-600 font-bold mt-2">
+                                        Nota: L'azienda opera in settori esclusi dai benchmark UE allineati all'Accordo di Parigi.
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    <div className="mt-12 pt-8 border-t border-gray-300 text-center text-sm text-gray-500">
+                        <p>Documento generato automaticamente tramite VSME Tool. Si prega di rivedere i contenuti qualitativi prima della firma.</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- SEZIONI MODULO BASE ---
+
+        const SectionB1 = ({ data, update }) => {
+            const [newSite, setNewSite] = useState({ address: '', zip: '', city: '', country: '', coords: '', type: 'Sede Legale' });
+
+            const handleAddSite = () => {
+                if (!newSite.address || !newSite.city) {
+                    alert("Compilare almeno indirizzo e città.");
+                    return;
+                }
+                const updatedSites = [...(data.sites || []), newSite];
+                update('b1', 'sites', updatedSites);
+                setNewSite({ address: '', zip: '', city: '', country: '', coords: '', type: 'Sede Legale' });
+            };
+
+            const handleRemoveSite = (index) => {
+                const updatedSites = data.sites.filter((_, i) => i !== index);
+                update('b1', 'sites', updatedSites);
+            };
+
+            const siteTypes = ["Sede Legale", "Magazzino", "Impianto Industriale", "Ufficio", "Altro"];
+
+            return (
+                <div>
+                    <SectionHeader code="B1" title="Base per la preparazione" />
+                    <Alert>Inserire i dati generali e selezionare l'opzione di rendicontazione (Par. 24).</Alert>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200">
+                         <h3 className={styles.subSectionTitle}>Dati Aziendali</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className={styles.labelField}>Opzione Modulo</label>
+                                <select className={styles.inputField} value={data.option} onChange={(e) => update('b1', 'option', e.target.value)}>
+                                    <option value="A">Opzione A: Solo Modulo Base</option>
+                                    <option value="B">Opzione B: Modulo Base + Modulo Completo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className={styles.labelField}>Forma Giuridica</label>
+                                <select className={styles.inputField} value={data.legalForm} onChange={(e) => update('b1', 'legalForm', e.target.value)}>
+                                    <option value="">Seleziona...</option>
+                                    <option value="Società a responsabilità limitata">Società a responsabilità limitata (Private limited liability)</option>
+                                    <option value="Ditta individuale">Ditta individuale (Sole proprietorship)</option>
+                                    <option value="Società di persone">Società di persone (Partnership)</option>
+                                    <option value="Cooperativa">Cooperativa (Cooperative)</option>
+                                    <option value="Altro">Altro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className={styles.labelField}>Codice NACE</label>
+                                <input type="text" className={styles.inputField} value={data.naceCode} onChange={(e) => update('b1', 'naceCode', e.target.value)} placeholder="Es. C.25.11" />
+                            </div>
+                            <div>
+                                <label className={styles.labelField}>Certificazioni Sostenibilità</label>
+                                <input type="text" className={styles.inputField} value={data.certifications || ''} onChange={(e) => update('b1', 'certifications', e.target.value)} placeholder="Es. EU Ecolabel..." />
+                            </div>
+                            <div>
+                                <label className={styles.labelField}>Fatturato (Unità monetarie)</label>
+                                <input type="number" className={styles.inputField} value={data.revenue} onChange={(e) => update('b1', 'revenue', parseFloat(e.target.value))} />
+                            </div>
+                            <div>
+                                <label className={styles.labelField}>Numero Dipendenti (FTE)</label>
+                                <input type="number" className={styles.inputField} value={data.employees} onChange={(e) => update('b1', 'employees', parseFloat(e.target.value))} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h3 className={styles.subSectionTitle}>Sedi Operative e Geolocalizzazione</h3>
+                        <p className="text-sm text-gray-500 mb-4">Elencare le sedi (Par. 24(e) vi-vii). Include coordinate per analisi rischi climatici.</p>
+
+                        <div className="overflow-x-auto mb-4">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-emerald-50 text-emerald-900">
+                                    <tr>
+                                        <th className="p-2 text-left">Tipo</th>
+                                        <th className="p-2 text-left">Indirizzo</th>
+                                        <th className="p-2 text-left">Città</th>
+                                        <th className="p-2 text-left">Paese</th>
+                                        <th className="p-2 text-left">Coordinate</th>
+                                        <th className="p-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(data.sites || []).map((site, idx) => (
+                                        <tr key={idx} className="border-b hover:bg-gray-50">
+                                            <td className="p-2">{site.type}</td>
+                                            <td className="p-2">{site.address}</td>
+                                            <td className="p-2">{site.zip} {site.city}</td>
+                                            <td className="p-2">{site.country}</td>
+                                            <td className="p-2 font-mono text-xs">{site.coords}</td>
+                                            <td className="p-2 text-right">
+                                                <button onClick={() => handleRemoveSite(idx)} className="text-red-500 hover:text-red-700">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {(!data.sites || data.sites.length === 0) && (
+                                        <tr><td colSpan="6" className="p-4 text-center text-gray-400 italic">Nessuna sede inserita.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded border border-gray-200">
+                            <h4 className="font-bold text-sm mb-2">Aggiungi Nuova Sede</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                <select className={`${styles.inputField} mt-0`} value={newSite.type} onChange={e => setNewSite({...newSite, type: e.target.value})}>
+                                    {siteTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <input type="text" className={`${styles.inputField} mt-0`} placeholder="Indirizzo" value={newSite.address} onChange={e => setNewSite({...newSite, address: e.target.value})} />
+                                <div className="flex gap-2">
+                                     <input type="text" className={`${styles.inputField} mt-0 w-24`} placeholder="CAP" value={newSite.zip} onChange={e => setNewSite({...newSite, zip: e.target.value})} />
+                                     <input type="text" className={`${styles.inputField} mt-0 flex-1`} placeholder="Città" value={newSite.city} onChange={e => setNewSite({...newSite, city: e.target.value})} />
+                                </div>
+                                <input type="text" className={`${styles.inputField} mt-0`} placeholder="Paese (es. Italia)" value={newSite.country} onChange={e => setNewSite({...newSite, country: e.target.value})} />
+                                <input type="text" className={`${styles.inputField} mt-0`} placeholder="Coordinate (es. 45.123, 9.456)" value={newSite.coords} onChange={e => setNewSite({...newSite, coords: e.target.value})} />
+                                <button onClick={handleAddSite} className="bg-emerald-600 text-white rounded px-4 py-2 hover:bg-emerald-700 font-medium flex items-center justify-center gap-2">
+                                    <Plus size={16}/> Aggiungi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SectionB2 = ({ data, update }) => {
+            const topics = [{ key: 'climate', label: 'Cambiamento Climatico' }, { key: 'pollution', label: 'Inquinamento' }, { key: 'water', label: 'Risorse Idriche' }, { key: 'biodiversity', label: 'Biodiversità' }, { key: 'circular', label: 'Economia Circolare' }, { key: 'workforce', label: 'Propria Forza Lavoro' }, { key: 'valueChain', label: 'Lavoratori Catena Valore' }, { key: 'communities', label: 'Comunità Interessate' }, { key: 'consumers', label: 'Consumatori' }, { key: 'governance', label: 'Condotta Aziendale' }];
+            const toggle = (topic, field) => { const newData = { ...data[topic], [field]: !data[topic][field] }; update('b2', topic, newData); };
+            return (
+                <div>
+                    <SectionHeader code="B2" title="Pratiche, Politiche e Iniziative" />
+                    <div className="overflow-x-auto border rounded-lg">
+                        <table className="min-w-full bg-white text-sm">
+                            <thead><tr className="bg-emerald-50 border-b"><th className="py-3 px-4 text-left">Tema</th><th className="py-3 px-4 text-center">Pratiche</th><th className="py-3 px-4 text-center">Politiche</th><th className="py-3 px-4 text-center">Obiettivi</th></tr></thead>
+                            <tbody>{topics.map(t => (<tr key={t.key} className="border-b"><td className="py-2 px-4 font-medium">{t.label}</td><td className="text-center"><input type="checkbox" checked={data[t.key].practice} onChange={() => toggle(t.key, 'practice')} /></td><td className="text-center"><input type="checkbox" checked={data[t.key].policy} onChange={() => toggle(t.key, 'policy')} /></td><td className="text-center"><input type="checkbox" checked={data[t.key].target} onChange={() => toggle(t.key, 'target')} /></td></tr>))}</tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        const SectionB3 = ({ data, revenue, update }) => {
+            const totalEnergy = (data.energyRenewable || 0) + (data.energyNonRenewable || 0);
+            const totalGHG = (data.scope1 || 0) + (data.scope2 || 0);
+            const intensity = revenue > 0 ? (totalGHG / revenue).toFixed(6) : 0;
+            return (<div><SectionHeader code="B3" title="Energia ed Emissioni GHG" /><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className={styles.labelField}>Rinnovabile (MWh)</label><input type="number" className={styles.inputField} value={data.energyRenewable} onChange={(e) => update('b3', 'energyRenewable', parseFloat(e.target.value))} /></div><div><label className={styles.labelField}>Non Rinnovabile (MWh)</label><input type="number" className={styles.inputField} value={data.energyNonRenewable} onChange={(e) => update('b3', 'energyNonRenewable', parseFloat(e.target.value))} /></div></div><div className={styles.calcBox}>Totale Energia: <strong>{totalEnergy} MWh</strong></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"><div><label className={styles.labelField}>Scope 1 (tCO2eq)</label><input type="number" className={styles.inputField} value={data.scope1} onChange={(e) => update('b3', 'scope1', parseFloat(e.target.value))} /></div><div><label className={styles.labelField}>Scope 2 (tCO2eq)</label><input type="number" className={styles.inputField} value={data.scope2} onChange={(e) => update('b3', 'scope2', parseFloat(e.target.value))} /></div></div><div className={styles.calcBox}>Intensità GHG: <strong>{intensity}</strong></div></div>);
+        };
+
+        const SectionB4 = ({ data, update }) => (<div><SectionHeader code="B4" title="Inquinamento" /><textarea className={styles.inputField} value={data.pollutants} onChange={(e) => update('b4', 'pollutants', e.target.value)} placeholder="Elenco inquinanti..." /></div>);
+        const SectionB5 = ({ data, update }) => (<div><SectionHeader code="B5" title="Biodiversità" /><div className="grid grid-cols-2 gap-4"><div><label>Siti Sensibili</label><input type="number" className={styles.inputField} value={data.sitesInSensitiveAreas} onChange={(e) => update('b5', 'sitesInSensitiveAreas', parseFloat(e.target.value))} /></div></div></div>);
+        const SectionB6 = ({ data, update }) => (<div><SectionHeader code="B6" title="Acqua" /><div className="grid grid-cols-2 gap-4"><div><label>Prelievo (m3)</label><input type="number" className={styles.inputField} value={data.waterWithdrawal} onChange={(e) => update('b6', 'waterWithdrawal', parseFloat(e.target.value))} /></div></div></div>);
+        const SectionB7 = ({ data, update }) => (<div><SectionHeader code="B7" title="Rifiuti" /><div className="grid grid-cols-3 gap-4"><div><label>Pericolosi (t)</label><input type="number" className={styles.inputField} value={data.wasteHazardous} onChange={(e) => update('b7', 'wasteHazardous', parseFloat(e.target.value))} /></div><div><label>Non Pericolosi (t)</label><input type="number" className={styles.inputField} value={data.wasteNonHazardous} onChange={(e) => update('b7', 'wasteNonHazardous', parseFloat(e.target.value))} /></div><div><label>Riciclati (t)</label><input type="number" className={styles.inputField} value={data.wasteRecycled} onChange={(e) => update('b7', 'wasteRecycled', parseFloat(e.target.value))} /></div></div></div>);
+        const SectionB8 = ({ data, employeesTotal, update }) => (<div><SectionHeader code="B8" title="Forza Lavoro" /><div className="grid grid-cols-2 gap-4"><div><label>Uomini</label><input type="number" className={styles.inputField} value={data.employeesMale} onChange={(e) => update('b8', 'employeesMale', parseFloat(e.target.value))} /></div><div><label>Donne</label><input type="number" className={styles.inputField} value={data.employeesFemale} onChange={(e) => update('b8', 'employeesFemale', parseFloat(e.target.value))} /></div></div></div>);
+        const SectionB9 = ({ data, update }) => (<div><SectionHeader code="B9" title="Salute e Sicurezza" /><div className="grid grid-cols-2 gap-4"><div><label>Infortuni</label><input type="number" className={styles.inputField} value={data.injuries} onChange={(e) => update('b9', 'injuries', parseFloat(e.target.value))} /></div><div><label>Ore Lavorate</label><input type="number" className={styles.inputField} value={data.hoursWorked} onChange={(e) => update('b9', 'hoursWorked', parseFloat(e.target.value))} /></div></div></div>);
+        const SectionB10 = ({ data, update }) => (<div><SectionHeader code="B10" title="Retribuzione" /><div className="grid grid-cols-2 gap-4"><div><label>Paga Oraria Uomini</label><input type="number" className={styles.inputField} value={data.maleHourlyRate} onChange={(e) => update('b10', 'maleHourlyRate', parseFloat(e.target.value))} /></div><div><label>Paga Oraria Donne</label><input type="number" className={styles.inputField} value={data.femaleHourlyRate} onChange={(e) => update('b10', 'femaleHourlyRate', parseFloat(e.target.value))} /></div></div></div>);
+        const SectionB11 = ({ data, update }) => (<div><SectionHeader code="B11" title="Corruzione" /><input type="number" className={styles.inputField} value={data.corruptionConvictions} onChange={(e) => update('b11', 'corruptionConvictions', parseFloat(e.target.value))} placeholder="Condanne definitive" /></div>);
+
+        const SectionC1 = ({ data, update }) => (<div><SectionHeader code="C1" title="Strategia" /><textarea className={styles.inputField} value={data.strategySustainability} onChange={(e) => update('c1', 'strategySustainability', e.target.value)} placeholder="Strategia di sostenibilità..." /></div>);
+        const SectionC2 = ({ dataC2, dataB2, update }) => { return (<div><SectionHeader code="C2" title="Dettaglio Pratiche" /><Alert>Compilare descrizioni per temi attivi in B2</Alert></div>); };
+        const SectionC3 = ({ data, update }) => (<div><SectionHeader code="C3" title="Target GHG" /><div className="grid grid-cols-2 gap-4"><div><label>Anno Target</label><input type="text" className={styles.inputField} value={data.targetYear} onChange={(e) => update('c3', 'targetYear', e.target.value)} /></div></div><textarea className={styles.inputField} value={data.actions} onChange={(e) => update('c3', 'actions', e.target.value)} placeholder="Azioni..." /></div>);
+        const SectionC8 = ({ data, update }) => (<div><SectionHeader code="C8" title="Settori Sensibili" /><label>Esclusa da Benchmark UE?</label><select className={styles.inputField} value={data.excludedFromBenchmarks} onChange={(e) => update('c8', 'excludedFromBenchmarks', e.target.value)}><option>No</option><option>Sì</option></select></div>);
+        const SectionC9 = ({ data, update }) => (<div><SectionHeader code="C9" title="Governance" /><div className="grid grid-cols-2 gap-4"><div><label>Donne Board</label><input type="number" className={styles.inputField} value={data.boardMembersFemale} onChange={(e) => update('c9', 'boardMembersFemale', parseFloat(e.target.value))} /></div><div><label>Uomini Board</label><input type="number" className={styles.inputField} value={data.boardMembersMale} onChange={(e) => update('c9', 'boardMembersMale', parseFloat(e.target.value))} /></div></div></div>);
+
+        // --- DASHBOARD ---
+        const Dashboard = ({ data, setView }) => {
+            return (
+                <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard VSME</h1>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
+                        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <div className="flex items-center gap-2 mb-2"><Activity className="text-emerald-600" /><h3 className="font-bold text-gray-700">Intensità GHG</h3></div>
+                            <p className="text-2xl font-bold text-gray-900">{data.b1.revenue > 0 ? ((data.b3.scope1 + data.b3.scope2)/data.b1.revenue).toFixed(6) : "—"}</p>
+                        </div>
+                        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <div className="flex items-center gap-2 mb-2"><Scale className="text-blue-600" /><h3 className="font-bold text-gray-700">Gender Gap</h3></div>
+                            <p className="text-2xl font-bold text-gray-900">{data.b10.maleHourlyRate > 0 ? (((data.b10.maleHourlyRate - data.b10.femaleHourlyRate) / data.b10.maleHourlyRate) * 100).toFixed(1) + "%" : "—"}</p>
+                        </div>
+                        <div className="bg-emerald-50 p-6 rounded-lg shadow-sm border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition" onClick={() => setView('report')}>
+                            <div className="flex items-center gap-2 mb-2"><BookOpen className="text-emerald-800" /><h3 className="font-bold text-emerald-900">Report Narrativo</h3></div>
+                            <p className="text-sm text-emerald-800">Clicca qui per generare e stampare il bilancio testuale completo.</p>
+                        </div>
+                    </div>
+                    {/* Navigazione rapida semplificata */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+                            <h3 className="font-bold text-lg mb-4 text-emerald-800">Compilazione Dati</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button onClick={() => setView('b1')} className="p-2 bg-gray-50 rounded hover:bg-gray-100 text-left text-sm">B1. Generali</button>
+                                <button onClick={() => setView('b3')} className="p-2 bg-gray-50 rounded hover:bg-gray-100 text-left text-sm">B3. Energia</button>
+                                <button onClick={() => setView('b8')} className="p-2 bg-gray-50 rounded hover:bg-gray-100 text-left text-sm">B8. Lavoro</button>
+                                <button onClick={() => setView('c1')} className="p-2 bg-blue-50 rounded hover:bg-blue-100 text-left text-sm text-blue-800">C1. Strategia</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- APP PRINCIPALE ---
+
+        function App() {
+            const [data, setData] = useState(initialData);
+            const [view, setView] = useState('dashboard');
+            const [notification, setNotification] = useState("");
+
+            useEffect(() => {
+                const saved = localStorage.getItem('vsme_data');
+                if (saved) { try { setData(JSON.parse(saved)); } catch(e) {} }
+            }, []);
+
+            useEffect(() => { localStorage.setItem('vsme_data', JSON.stringify(data)); }, [data]);
+
+            const updateData = (section, field, value) => {
+                setData(prev => ({ ...prev, [section]: { ...prev[section], [field]: value } }));
+            };
+
+            const downloadJson = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `VSME_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                showNotification("File scaricato!");
+            };
+
+            const uploadJson = (event) => {
+                const fileReader = new FileReader();
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = e => {
+                    try { setData(JSON.parse(e.target.result)); showNotification("Progetto importato!"); }
+                    catch(err) { showNotification("Errore nel file JSON."); }
+                };
+            };
+
+            const resetData = () => { if(confirm("Cancellare tutto?")) { setData(initialData); showNotification("Reset effettuato."); } };
+            const showNotification = (msg) => { setNotification(msg); setTimeout(() => setNotification(""), 3000); };
+
+            const renderContent = () => {
+                switch(view) {
+                    case 'dashboard': return <Dashboard data={data} setView={setView} />;
+                    case 'report': return <NarrativeReport data={data} />;
+                    case 'b1': return <SectionB1 data={data.b1} update={updateData} />;
+                    case 'b2': return <SectionB2 data={data.b2} update={updateData} />;
+                    case 'b3': return <SectionB3 data={data.b3} revenue={data.b1.revenue} update={updateData} />;
+                    case 'b4': return <SectionB4 data={data.b4} update={updateData} />;
+                    case 'b5': return <SectionB5 data={data.b5} update={updateData} />;
+                    case 'b6': return <SectionB6 data={data.b6} update={updateData} />;
+                    case 'b7': return <SectionB7 data={data.b7} update={updateData} />;
+                    case 'b8': return <SectionB8 data={data.b8} employeesTotal={data.b1.employees} update={updateData} />;
+                    case 'b9': return <SectionB9 data={data.b9} update={updateData} />;
+                    case 'b10': return <SectionB10 data={data.b10} update={updateData} />;
+                    case 'b11': return <SectionB11 data={data.b11} update={updateData} />;
+                    case 'c1': return <SectionC1 data={data.c1} update={updateData} />;
+                    case 'c2': return <SectionC2 dataC2={data.c2} dataB2={data.b2} update={updateData} />;
+                    case 'c3': return <SectionC3 data={data.c3} update={updateData} />;
+                    case 'c8': return <SectionC8 data={data.c8} update={updateData} />;
+                    case 'c9': return <SectionC9 data={data.c9} update={updateData} />;
+                    default: return <Dashboard data={data} setView={setView} />;
+                }
+            };
+
+            return (
+                <div className="flex h-screen bg-gray-100 font-sans">
+                    <div className={`w-64 bg-emerald-900 text-white flex flex-col shadow-xl ${styles.printHidden}`}>
+                        <div className="p-6 font-bold text-xl flex items-center gap-2 border-b border-emerald-800">
+                            <Leaf size={24} /> VSME Tool
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <button onClick={() => setView('dashboard')} className={`${styles.navBtn} ${view === 'dashboard' ? styles.navBtnActive : ''} mb-4`}>
+                                Dashboard <Activity size={16}/>
+                            </button>
+                            <button onClick={() => setView('report')} className={`${styles.navBtn} ${view === 'report' ? 'bg-emerald-600 text-white font-bold' : 'bg-emerald-800 text-emerald-100'} mb-4 py-3`}>
+                                Genera Report <BookOpen size={16}/>
+                            </button>
+
+                            <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2 mt-2">Modulo Base</div>
+                            <button onClick={() => setView('b1')} className={`${styles.navBtn} ${view === 'b1' ? styles.navBtnActive : ''}`}>B1 Generali</button>
+                            <button onClick={() => setView('b2')} className={`${styles.navBtn} ${view === 'b2' ? styles.navBtnActive : ''}`}>B2 Pratiche</button>
+                            <button onClick={() => setView('b3')} className={`${styles.navBtn} ${view === 'b3' ? styles.navBtnActive : ''}`}>B3 Energia</button>
+                            <button onClick={() => setView('b4')} className={`${styles.navBtn} ${view === 'b4' ? styles.navBtnActive : ''}`}>B4 Inquinamento</button>
+                            <button onClick={() => setView('b5')} className={`${styles.navBtn} ${view === 'b5' ? styles.navBtnActive : ''}`}>B5 Biodiversità</button>
+                            <button onClick={() => setView('b6')} className={`${styles.navBtn} ${view === 'b6' ? styles.navBtnActive : ''}`}>B6 Acqua</button>
+                            <button onClick={() => setView('b7')} className={`${styles.navBtn} ${view === 'b7' ? styles.navBtnActive : ''}`}>B7 Rifiuti</button>
+                            <button onClick={() => setView('b8')} className={`${styles.navBtn} ${view === 'b8' ? styles.navBtnActive : ''}`}>B8 Forza Lavoro</button>
+                            <button onClick={() => setView('b9')} className={`${styles.navBtn} ${view === 'b9' ? styles.navBtnActive : ''}`}>B9 Salute</button>
+                            <button onClick={() => setView('b10')} className={`${styles.navBtn} ${view === 'b10' ? styles.navBtnActive : ''}`}>B10 Paga</button>
+                            <button onClick={() => setView('b11')} className={`${styles.navBtn} ${view === 'b11' ? styles.navBtnActive : ''}`}>B11 Condotta</button>
+
+                            {data.b1.option === 'B' && (
+                                <>
+                                    <div className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-2 mt-4">Modulo Completo</div>
+                                    <button onClick={() => setView('c1')} className={`${styles.navBtn} ${view === 'c1' ? styles.navBtnActive : ''}`}>C1 Strategia</button>
+                                    <button onClick={() => setView('c2')} className={`${styles.navBtn} ${view === 'c2' ? styles.navBtnActive : ''}`}>C2 Dettaglio B2</button>
+                                    <button onClick={() => setView('c3')} className={`${styles.navBtn} ${view === 'c3' ? styles.navBtnActive : ''}`}>C3 Target GHG</button>
+                                    <button onClick={() => setView('c8')} className={`${styles.navBtn} ${view === 'c8' ? styles.navBtnActive : ''}`}>C8 Settori</button>
+                                    <button onClick={() => setView('c9')} className={`${styles.navBtn} ${view === 'c9' ? styles.navBtnActive : ''}`}>C9 Governance</button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className={`bg-white shadow-sm border-b p-4 flex justify-between items-center ${styles.printHidden}`}>
+                            <div className="font-semibold text-gray-700">Progetto: {data.meta.projectName}</div>
+                            <div className="flex gap-2">
+                                <button onClick={downloadJson} className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-100 border border-blue-200"><Download size={16} /> Salva JSON</button>
+                                <label className="flex items-center gap-1 bg-gray-50 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-100 border border-gray-200 cursor-pointer"><Upload size={16} /> Carica<input type="file" onChange={uploadJson} className="hidden" accept=".json" /></label>
+                                <button onClick={resetData} className="flex items-center gap-1 bg-red-50 text-red-700 px-3 py-1 rounded text-sm hover:bg-red-100 border border-red-200"><Trash2 size={16} /> Reset</button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-auto p-8 relative print:p-0 print:overflow-visible">
+                            {notification && (
+                                <div className="absolute top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded shadow-lg animate-bounce z-50 print:hidden">
+                                    {notification}
+                                </div>
+                            )}
+                            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow min-h-[600px] print:shadow-none print:p-0">
+                                {renderContent()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
