@@ -774,7 +774,7 @@
             templates.forEach(template => {
                 html += `
                     <div class="template-card border-2 rounded-lg p-2 ${appState.activeTemplate === template.id ? 'selected' : 'border-transparent'}" data-template-id="${template.id}">
-                        <img src="${template.thumb}" alt="${template.name}" class="w-full h-auto rounded-md mb-2">
+                        <img src="${template.thumb}" alt="${template.name}" class="w-full h-auto rounded-md mb-2" loading="lazy">
                         <p class="text-center text-sm font-medium text-gray-600">${template.name}</p>
                     </div>
                 `;
@@ -871,9 +871,9 @@
                 if (!hasAnyContent) return '';
 
                 let finalNodeHTML = `<h2>${node.name}</h2>`;
-                if (node.id === 'E') finalNodeHTML += `<img src="https://placehold.co/700x250/a0d2eb/FFFFFF?text=Ambiente" alt="Immagine a tema ambientale" class="w-full h-auto object-cover rounded-lg my-4">`;
-                if (node.id === 'S') finalNodeHTML += `<img src="https://placehold.co/700x250/fde68a/FFFFFF?text=Sociale" alt="Immagine a tema sociale" class="w-full h-auto object-cover rounded-lg my-4">`;
-                if (node.id === 'G') finalNodeHTML += `<img src="https://placehold.co/700x250/4a5568/FFFFFF?text=Governance" alt="Immagine a tema governance" class="w-full h-auto object-cover rounded-lg my-4">`;
+                if (node.id === 'E') finalNodeHTML += `<img src="https://placehold.co/700x250/a0d2eb/FFFFFF?text=Ambiente" alt="Immagine a tema ambientale" class="w-full h-auto object-cover rounded-lg my-4" loading="lazy">`;
+                if (node.id === 'S') finalNodeHTML += `<img src="https://placehold.co/700x250/fde68a/FFFFFF?text=Sociale" alt="Immagine a tema sociale" class="w-full h-auto object-cover rounded-lg my-4" loading="lazy">`;
+                if (node.id === 'G') finalNodeHTML += `<img src="https://placehold.co/700x250/4a5568/FFFFFF?text=Governance" alt="Immagine a tema governance" class="w-full h-auto object-cover rounded-lg my-4" loading="lazy">`;
                 
                 finalNodeHTML += Object.values(sectionHTMLs).join('');
                 return finalNodeHTML;
