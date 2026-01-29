@@ -1,0 +1,3 @@
+## 2025-05-15 - Lazy Loading Heavy Libraries in Single-File App
+**Learning:** When retrofitting lazy loading into a legacy single-file HTML application, simply removing script tags and loading them on demand creates race conditions if the UI is interactive immediately. Functions that assume global library presence (like `tinymce`) must be guarded with `typeof` checks and provided with fallbacks (e.g., using the raw `<textarea>` if the rich text editor isn't loaded yet) to prevent crashes or data loss.
+**Action:** Always wrap global library access in guards when implementing async loading, and ensure data persistence logic handles the "loading" state gracefully.
