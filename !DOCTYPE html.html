@@ -423,12 +423,11 @@
             return null;
         };
 
-        const getAllChildIds = (node) => {
-            let ids = [];
+        const getAllChildIds = (node, ids = []) => {
             if (node.children) {
                 node.children.forEach(child => {
                     ids.push(child.id);
-                    ids = ids.concat(getAllChildIds(child));
+                    getAllChildIds(child, ids);
                 });
             }
             return ids;
