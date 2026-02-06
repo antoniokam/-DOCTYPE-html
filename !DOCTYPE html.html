@@ -1116,6 +1116,21 @@
             document.body.removeChild(fileDownload);
         }
 
+        function updateNavActiveState(newDrId) {
+            const nav = document.getElementById('report-nav');
+            if (!nav) return;
+
+            const currentActive = nav.querySelector('.nav-link.active');
+            if (currentActive) {
+                currentActive.classList.remove('active');
+            }
+
+            const newActive = nav.querySelector(`.nav-link[data-dr-id="${newDrId}"]`);
+            if (newActive) {
+                newActive.classList.add('active');
+            }
+        }
+
         function navigateToDR(drId) {
             if (!drId) return;
 
@@ -1128,7 +1143,7 @@
             }
             
             appState.activeDR = drId;
-            renderReportBuilderNav();
+            updateNavActiveState(drId);
             renderDataEntryForm(appState.activeDR);
             const reportBuilder = document.getElementById('report-builder-container');
             reportBuilder.scrollIntoView({ behavior: 'smooth', block: 'start' });
