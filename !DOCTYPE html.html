@@ -10,14 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Librerie per l'esportazione in PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Librerie per l'importazione di file -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <!-- Libreria per Rich Text Editor (TinyMCE) -->
-    <script src="https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Librerie caricate dinamicamente (lazy loading) per ottimizzazione performance -->
 
 
     <style>
@@ -412,6 +405,24 @@
         };
 
         // --- Funzioni Helper ---
+        const scriptCache = {};
+        function loadScript(src, attributes = {}) {
+            if (scriptCache[src]) return scriptCache[src];
+
+            scriptCache[src] = new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                Object.entries(attributes).forEach(([key, value]) => script.setAttribute(key, value));
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Script load error for ${src}`));
+                document.head.appendChild(script);
+            });
+            return scriptCache[src];
+        }
         const findNodeAndParents = (nodes, nodeId, parents = []) => {
             for (const node of nodes) {
                 if (node.id === nodeId) return { node, parents };
@@ -558,7 +569,7 @@
             return visibleDRs;
         }
 
-        function renderDataEntryForm(drId) {
+        async function renderDataEntryForm(drId) {
             const mainContent = document.getElementById('report-builder-main');
             const dr = esrsDRDetails[drId];
             if (!dr) {
@@ -646,6 +657,7 @@
             mainContent.innerHTML = formHTML;
             
             if (dr.type === 'policy' || dr.type === 'targets' || dr.type === 'actions' || dr.type === 'mixed') {
+                await loadScript('https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js', { referrerpolicy: 'origin' });
                 tinymce.init({
                     selector: `#qualitative-${drId}`,
                     plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange formatpainter pageembed a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown importword exportword exportpdf',
@@ -914,7 +926,7 @@
             const form = document.getElementById('data-entry-form-body');
             if (!form || !drId) return;
 
-            const editor = tinymce.get(`qualitative-${drId}`);
+            const editor = (typeof tinymce !== 'undefined') ? tinymce.get(`qualitative-${drId}`) : null;
             if (editor) {
                 if (!appState.reportData[drId]) {
                     appState.reportData[drId] = {};
@@ -940,6 +952,9 @@
         
         async function handleFileImport(event) {
             const file = event.target.files[0];
+            if (typeof tinymce === 'undefined') {
+                 await loadScript('https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js', { referrerpolicy: 'origin' });
+            }
             const editor = tinymce.get(`qualitative-${appState.importTargetDrId}`);
             if (!file || !editor) return;
 
@@ -954,10 +969,12 @@
             try {
                 let content = '';
                 if (file.name.endsWith('.docx')) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.convertToHtml({ arrayBuffer });
                     content = result.value;
                 } else if (file.name.endsWith('.pdf')) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js');
                     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1058,7 +1075,9 @@
             reader.readAsText(file);
         }
 
-        function exportToPdf() {
+        async function exportToPdf() {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
             const { jsPDF } = window.jspdf;
             const reportContent = document.getElementById("report-preview-content");
             
@@ -1121,7 +1140,7 @@
 
             if (appState.activeDR) {
                 handleSaveData(appState.activeDR);
-                const oldEditor = tinymce.get(`qualitative-${appState.activeDR}`);
+                const oldEditor = (typeof tinymce !== 'undefined') ? tinymce.get(`qualitative-${appState.activeDR}`) : null;
                 if (oldEditor) {
                     oldEditor.destroy();
                 }
