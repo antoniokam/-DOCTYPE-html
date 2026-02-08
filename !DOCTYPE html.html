@@ -11,13 +11,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <!-- Librerie per l'esportazione in PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+
     <!-- Librerie per l'importazione di file -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+
     <!-- Libreria per Rich Text Editor (TinyMCE) -->
-    <script src="https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
 
 
     <style>
@@ -412,6 +412,29 @@
         };
 
         // --- Funzioni Helper ---
+        const loadedScripts = {};
+
+        function loadScript(src, attributes = {}) {
+            if (loadedScripts[src]) {
+                return loadedScripts[src];
+            }
+
+            loadedScripts[src] = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+
+                Object.keys(attributes).forEach(key => {
+                    script.setAttribute(key, attributes[key]);
+                });
+
+                document.head.appendChild(script);
+            });
+
+            return loadedScripts[src];
+        }
+
         const findNodeAndParents = (nodes, nodeId, parents = []) => {
             for (const node of nodes) {
                 if (node.id === nodeId) return { node, parents };
@@ -646,7 +669,8 @@
             mainContent.innerHTML = formHTML;
             
             if (dr.type === 'policy' || dr.type === 'targets' || dr.type === 'actions' || dr.type === 'mixed') {
-                tinymce.init({
+                loadScript('https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js', {referrerpolicy: 'origin'}).then(() => {
+                    tinymce.init({
                     selector: `#qualitative-${drId}`,
                     plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange formatpainter pageembed a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown importword exportword exportpdf',
                     toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
@@ -667,6 +691,7 @@
                             }
                         });
                     }
+                });
                 });
             }
         }
@@ -954,10 +979,12 @@
             try {
                 let content = '';
                 if (file.name.endsWith('.docx')) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.convertToHtml({ arrayBuffer });
                     content = result.value;
                 } else if (file.name.endsWith('.pdf')) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js');
                     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1059,6 +1086,11 @@
         }
 
         function exportToPdf() {
+            showModal('Caricamento librerie PDF...', 'Esportazione');
+            Promise.all([
+                loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+            ]).then(() => {
             const { jsPDF } = window.jspdf;
             const reportContent = document.getElementById("report-preview-content");
             
@@ -1097,6 +1129,10 @@
                 pdf.save("bilancio_sostenibilita_cm_service.pdf");
                 showModal('PDF esportato con successo!', 'Esportazione Completata');
             });
+        }).catch(error => {
+            console.error(error);
+            showModal('Errore caricamento librerie: ' + error.message, 'Errore');
+        });
         }
 
         function exportToWord() {
