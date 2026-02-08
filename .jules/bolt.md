@@ -1,0 +1,3 @@
+## 2025-05-13 - [Handling Mixed/CRLF Line Endings in File Manipulation]
+**Learning:** When performing string replacements on files that may use CRLF (Windows) line endings, Python's string literals using `\n` will fail to match content containing `\r\n`. Reading in text mode normalizes to `\n` but writing back can be tricky if you need to preserve the original format. Reading in binary mode and decoding preserves the original line endings, requiring the script to detect and match them explicitly.
+**Action:** Always detect the file's newline style (e.g., by checking for `\r\n`) before performing string replacements, and adapt replacement strings accordingly using a helper function.
