@@ -161,6 +161,7 @@
     </footer>
 
     <script>
+        const TAG_REGEX = /<[^>]*>/g;
         // --- Struttura Dati ESRS (AGGIORNATA) ---
         const esrsStructure = [
             {
@@ -800,9 +801,23 @@
             const isDataEmpty = (drId) => {
                 const data = appState.reportData[drId];
                 if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
+
+                let hasQualitative = false;
+                if (data.qualitative) {
+                    const qTrim = data.qualitative.trim();
+                    if (qTrim !== "" && qTrim !== "<p><br></p>") {
+                        hasQualitative = qTrim.replace(TAG_REGEX, "").trim().length > 0;
+                    }
+                }
+
+                if (hasQualitative) return false;
+
+                const fields = esrsDRDetails[drId]?.fields;
+                const hasQuantitative = fields?.some(field => {
+                    const val = data[field.id];
+                    return val !== null && val !== undefined && String(val).trim() !== "";
+                });
+                return !hasQuantitative;
             };
 
             const renderNodeData = (node) => {
