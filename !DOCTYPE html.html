@@ -11,13 +11,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <!-- Librerie per l'esportazione in PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+
     <!-- Librerie per l'importazione di file -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+
     <!-- Libreria per Rich Text Editor (TinyMCE) -->
-    <script src="https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
 
 
     <style>
@@ -50,7 +50,7 @@
             color: #6b7280;
             cursor: not-allowed;
         }
-        
+
         /* --- Stili Globali per l'anteprima --- */
         #report-preview-content p {
             text-align: justify;
@@ -151,7 +151,7 @@
     <div id="save-notification" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-10">
         Dati salvati con successo!
     </div>
-    
+
     <!-- Input nascosti per l'importazione dei file -->
     <input type="file" id="file-importer" accept=".pdf,.docx" style="display: none;">
     <input type="file" id="session-loader" accept=".json" style="display: none;">
@@ -221,7 +221,7 @@
                 }
             }
         ];
-        
+
         // --- Definizione Dettagliata dei Requisiti di Informativa (DR) (AGGIORNATA) ---
         const esrsDRDetails = {
             'BP-1': { title: 'Criteri generali per la redazione delle dichiarazioni sulla sostenibilità', type: 'policy', description: "Descrivere i criteri generali seguiti (conformità agli ESRS), il perimetro di rendicontazione (società incluse, confini), il periodo di riferimento, le eventuali limitazioni o esclusioni significative, e l'approccio all'analisi di doppia materialità." },
@@ -301,10 +301,10 @@
             'S1-7': { title: "Caratteristiche dei lavoratori non dipendenti nella forza lavoro propria dell'impresa", type: 'mixed', description: "Metriche sui lavoratori non dipendenti (numero, tipologia)." , fields: [
                 { id: 'nonEmployees', label: 'Numero totale lavoratori non dipendenti', unit: 'numero' }
             ]},
-            'S1-8': { 
-                title: 'Copertura della contrattazione collettiva e dialogo sociale', 
-                type: 'mixed', 
-                description: "Informazioni sulla percentuale di dipendenti coperti da contrattazione collettiva e descrizione dei processi di dialogo sociale con i rappresentanti dei lavoratori.", 
+            'S1-8': {
+                title: 'Copertura della contrattazione collettiva e dialogo sociale',
+                type: 'mixed',
+                description: "Informazioni sulla percentuale di dipendenti coperti da contrattazione collettiva e descrizione dei processi di dialogo sociale con i rappresentanti dei lavoratori.",
                 fields: [
                     { id: 'collectiveBargainingCoverage', label: '% di dipendenti coperti da contrattazione collettiva', unit: '%' }
                 ]
@@ -357,10 +357,10 @@
                 { id: 'fines', label: 'Importo delle multe per corruzione', unit: '€' },
             ]},
             'G1-5': { title: 'Attività di influenza politica e di lobbying', type: 'policy', description: "Descrivere le attività di lobbying, le principali tematiche e posizioni, e i fondi spesi. Indicare le associazioni di cui si è membri." },
-            'G1-6': { 
-                title: "Prassi di pagamento", 
-                type: 'mixed', 
-                description: "Informazioni sulle pratiche di pagamento verso i fornitori, inclusa la percentuale di pagamenti puntuali e l'indicatore di tempestività (ITP). L'ITP fornisce una misura sintetica della puntualità o del ritardo con cui un'organizzazione salda i propri debiti commerciali.", 
+            'G1-6': {
+                title: "Prassi di pagamento",
+                type: 'mixed',
+                description: "Informazioni sulle pratiche di pagamento verso i fornitori, inclusa la percentuale di pagamenti puntuali e l'indicatore di tempestività (ITP). L'ITP fornisce una misura sintetica della puntualità o del ritardo con cui un'organizzazione salda i propri debiti commerciali.",
                 fields: [
                     { id: 'onTimePayments', label: 'Percentuale di Pagamenti Puntuali (% On-Time)', unit: '%' },
                     { id: 'paymentTimelinessIndicator', label: 'Indicatore di Tempestività dei Pagamenti (ITP)', unit: 'giorni' },
@@ -400,16 +400,32 @@
                 "S2-1": { "qualitative": `C.M. Service estende i propri principi etici all'intera catena di approvvigionamento attraverso il "Codice di Condotta Fornitori". Questo documento, parte integrante del processo di qualifica, definisce i requisiti minimi in termini di diritti umani, divieto di lavoro forzato e minorile, salute e sicurezza e pratiche etiche. L'adesione al codice è un prerequisito per i partner commerciali.`},
                 "S3-1": { "qualitative": `La gestione degli impatti sulle comunità è integrata in diverse policy aziendali. Il Codice Etico stabilisce i principi di rispetto per tutti gli stakeholder. La Politica Ambientale (ISO 14001/EMAS) gestisce gli impatti operativi diretti (rifiuti, emissioni). Le politiche di approvvigionamento privilegiano fornitori locali per generare valore condiviso.`},
                 "S4-1": { "qualitative": `La gestione degli impatti sugli utenti finali è governata dal Sistema di Gestione per la Sicurezza Alimentare (certificato ISO 22000) e dalla "Politica per la Sicurezza, Qualità e Sostenibilità Alimentare". L'azienda garantisce la massima sicurezza attraverso la metodologia HACCP, la tracciabilità di filiera (ISO 22005) e la tutela della privacy (GDPR, ISO 27001).`},
-                "G1-6": { 
-                    "onTimePayments": "53.62", 
+                "G1-6": {
+                    "onTimePayments": "53.62",
                     "paymentTimelinessIndicator": "1.71",
                     "qualitative": "Circa il 53% delle fatture analizzate nel periodo di riferimento è stata pagata entro o alla data di scadenza concordata. L'indicatore di tempestività dei pagamenti (ITP) medio è di 1,71 giorni."
                 }
             },
-            activeDR: null, 
+            activeDR: null,
             importTargetDrId: null,
             activeTemplate: 'template-1'
         };
+
+
+        const scriptCache = {};
+        function loadScript(src, attributes = {}) {
+            if (scriptCache[src]) return scriptCache[src];
+
+            scriptCache[src] = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                Object.entries(attributes).forEach(([key, value]) => script.setAttribute(key, value));
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+                document.head.appendChild(script);
+            });
+            return scriptCache[src];
+        }
 
         // --- Funzioni Helper ---
         const findNodeAndParents = (nodes, nodeId, parents = []) => {
@@ -446,7 +462,7 @@
 
             const modalContent = document.createElement('div');
             modalContent.className = 'bg-white p-6 rounded-lg shadow-xl max-w-md w-full';
-            
+
             const modalTitle = document.createElement('h3');
             modalTitle.className = 'text-lg font-bold text-gray-800 mb-4';
             modalTitle.textContent = title;
@@ -533,7 +549,7 @@
                 </div>
             `;
         }
-        
+
         function getVisibleDRs() {
             const visibleDRs = [];
             const traverse = (nodes) => {
@@ -596,7 +612,7 @@
                         </div>
                 `;
             }
-            
+
             if ((dr.type === 'metrics' || dr.type === 'data' || dr.type === 'mixed') && dr.fields) {
                 if (dr.fields.length > 0) {
                     formHTML += '<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">';
@@ -626,7 +642,7 @@
                     formHTML += '</div>';
                 }
             }
-            
+
             let buttonsHTML = `
                 <button class="action-btn bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 mr-3" data-import-btn="${drId}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -644,9 +660,11 @@
                 </div></div>
             `;
             mainContent.innerHTML = formHTML;
-            
+
             if (dr.type === 'policy' || dr.type === 'targets' || dr.type === 'actions' || dr.type === 'mixed') {
-                tinymce.init({
+                loadScript('https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js', { referrerpolicy: 'origin' }).then(() => {
+                if (window.tinymce) {
+                    tinymce.init({
                     selector: `#qualitative-${drId}`,
                     plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange formatpainter pageembed a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown importword exportword exportpdf',
                     toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
@@ -668,6 +686,8 @@
                         });
                     }
                 });
+                }
+                }).catch(err => console.error('Failed to load TinyMCE', err));
             }
         }
 
@@ -681,7 +701,7 @@
                     .filter(node => appState.selection[node.id] || node.alwaysActive)
                     .forEach(node => {
                         html += `<li class="my-2"><span class="font-bold text-gray-800">${node.name}</span>`;
-                        
+
                         if (node.children && node.children.length > 0) {
                              html += buildNavLinksHTML(node.children, level + 1);
                         }
@@ -744,7 +764,7 @@
                 <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Modulo 4: Generazione del Report</h2>
                     <p class="text-gray-600 mb-6">Seleziona un template e genera il bilancio di sostenibilità.</p>
-                    
+
                     <div id="template-selector-container" class="mb-6"></div>
 
                     <div class="flex items-center space-x-4">
@@ -782,11 +802,11 @@
             html += `</div>`;
             container.innerHTML = html;
         }
-        
+
         function renderReportPreview() {
             const container = document.getElementById('report-preview-container');
             container.className = `mt-8 ${appState.activeTemplate}`; // Applica la classe del template
-            
+
             let previewHTML = `
                 <div class="bg-white p-8 md:p-12 rounded-xl shadow-lg border border-gray-200">
                     <div id="report-preview-content">
@@ -807,7 +827,7 @@
 
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
-                
+
                 let sectionHTMLs = {};
                 let hasAnyContent = false;
 
@@ -822,10 +842,10 @@
                                 hasAnyContent = true;
                                 const drData = appState.reportData[drId];
                                 const drDetails = esrsDRDetails[drId];
-                                
+
                                 currentSectionHTML += `<div class="mb-4 pl-4 border-l-4 border-gray-200">`;
                                 currentSectionHTML += `<h4 class="text-lg font-semibold text-gray-800">${drId.split('_')[0]} - ${drDetails.title}</h4>`;
-                                
+
                                 if (drData.qualitative) {
                                     currentSectionHTML += `<div class="mt-2 text-gray-700">${drData.qualitative}</div>`;
                                 }
@@ -874,7 +894,7 @@
                 if (node.id === 'E') finalNodeHTML += `<img src="https://placehold.co/700x250/a0d2eb/FFFFFF?text=Ambiente" alt="Immagine a tema ambientale" class="w-full h-auto object-cover rounded-lg my-4">`;
                 if (node.id === 'S') finalNodeHTML += `<img src="https://placehold.co/700x250/fde68a/FFFFFF?text=Sociale" alt="Immagine a tema sociale" class="w-full h-auto object-cover rounded-lg my-4">`;
                 if (node.id === 'G') finalNodeHTML += `<img src="https://placehold.co/700x250/4a5568/FFFFFF?text=Governance" alt="Immagine a tema governance" class="w-full h-auto object-cover rounded-lg my-4">`;
-                
+
                 finalNodeHTML += Object.values(sectionHTMLs).join('');
                 return finalNodeHTML;
             };
@@ -898,14 +918,14 @@
             if (!node || node.alwaysActive) return;
 
             const isSelected = !appState.selection[topicId];
-            
+
             const allIdsToChange = [node.id, ...getAllChildIds(node)];
             allIdsToChange.forEach(id => { appState.selection[id] = isSelected; });
 
             if (isSelected) {
                 parents.forEach(parent => { appState.selection[parent.id] = true; });
             }
-            
+
             renderMaterialitySelector();
             renderReportBuilderNav();
         }
@@ -914,14 +934,16 @@
             const form = document.getElementById('data-entry-form-body');
             if (!form || !drId) return;
 
-            const editor = tinymce.get(`qualitative-${drId}`);
-            if (editor) {
-                if (!appState.reportData[drId]) {
-                    appState.reportData[drId] = {};
+            if (window.tinymce) {
+                const editor = tinymce.get(`qualitative-${drId}`);
+                if (editor) {
+                    if (!appState.reportData[drId]) {
+                        appState.reportData[drId] = {};
+                    }
+                    appState.reportData[drId]['qualitative'] = editor.getContent();
                 }
-                appState.reportData[drId]['qualitative'] = editor.getContent();
             }
-            
+
             const inputs = form.querySelectorAll('input[data-dr-id]');
             inputs.forEach(input => {
                 const { drId: inputDrId, fieldId } = input.dataset;
@@ -937,14 +959,19 @@
                 notification.classList.add('opacity-0', 'translate-y-10');
             }, 2000);
         }
-        
+
         async function handleFileImport(event) {
             const file = event.target.files[0];
-            const editor = tinymce.get(`qualitative-${appState.importTargetDrId}`);
-            if (!file || !editor) return;
+            if (!file) return;
 
             const drId = appState.importTargetDrId;
             if (!drId) return;
+
+            if (!window.tinymce || !tinymce.get(`qualitative-${drId}`)) {
+                 showModal('Editor non pronto. Riprova tra un istante.', 'Attenzione');
+                 return;
+            }
+            const editor = tinymce.get(`qualitative-${drId}`);
 
             const importButton = document.querySelector(`[data-import-btn="${drId}"]`);
             const originalButtonContent = importButton.innerHTML;
@@ -954,10 +981,12 @@
             try {
                 let content = '';
                 if (file.name.endsWith('.docx')) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js');
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.convertToHtml({ arrayBuffer });
                     content = result.value;
                 } else if (file.name.endsWith('.pdf')) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js');
                     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -993,7 +1022,7 @@
                 if (appState.activeDR) {
                     handleSaveData(appState.activeDR);
                 }
-                
+
                 // Crea una copia "pulita" dello stato da salvare
                 const stateToSave = {
                     selection: appState.selection,
@@ -1059,12 +1088,17 @@
         }
 
         function exportToPdf() {
-            const { jsPDF } = window.jspdf;
-            const reportContent = document.getElementById("report-preview-content");
-            
-            showModal('Generazione PDF in corso...', 'Esportazione');
+            showModal('Caricamento librerie PDF...', 'Esportazione');
+            Promise.all([
+                loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+            ]).then(() => {
+                const { jsPDF } = window.jspdf;
+                const reportContent = document.getElementById("report-preview-content");
 
-            html2canvas(reportContent, { scale: 2, windowWidth: reportContent.scrollWidth, windowHeight: reportContent.scrollHeight }).then(canvas => {
+                showModal('Generazione PDF in corso...', 'Esportazione');
+
+                html2canvas(reportContent, { scale: 2, windowWidth: reportContent.scrollWidth, windowHeight: reportContent.scrollHeight }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -1086,7 +1120,7 @@
                     pdf.addImage(imgData, 'PNG', 10, position + 10, imgWidth, imgHeight);
                     heightLeft -= (pdfHeight - 20);
                 }
-                
+
                 const pageCount = pdf.internal.getNumberOfPages();
                 for(let i = 1; i <= pageCount; i++) {
                     pdf.setPage(i);
@@ -1097,6 +1131,7 @@
                 pdf.save("bilancio_sostenibilita_cm_service.pdf");
                 showModal('PDF esportato con successo!', 'Esportazione Completata');
             });
+            }).catch(err => showModal('Errore caricamento librerie: ' + err.message));
         }
 
         function exportToWord() {
@@ -1106,7 +1141,7 @@
                 "<head><meta charset='utf-8'><title>Bilancio di Sostenibilità</title></head><body>";
             const footer = "</body></html>";
             const sourceHTML = header + document.getElementById("report-preview-content").innerHTML + footer;
-            
+
             const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
             const fileDownload = document.createElement("a");
             document.body.appendChild(fileDownload);
@@ -1121,24 +1156,26 @@
 
             if (appState.activeDR) {
                 handleSaveData(appState.activeDR);
-                const oldEditor = tinymce.get(`qualitative-${appState.activeDR}`);
-                if (oldEditor) {
-                    oldEditor.destroy();
+                if (window.tinymce) {
+                    const oldEditor = tinymce.get(`qualitative-${appState.activeDR}`);
+                    if (oldEditor) {
+                        oldEditor.destroy();
+                    }
                 }
             }
-            
+
             appState.activeDR = drId;
             renderReportBuilderNav();
             renderDataEntryForm(appState.activeDR);
             const reportBuilder = document.getElementById('report-builder-container');
             reportBuilder.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-        
+
         // --- Inizializzazione e Gestione Eventi ---
         function init() {
             const initialSelection = {
-                "ESRS 2": true, "E": true, "E1": true, "E2": true, "E3": true, "E4": true, "E5": true, 
-                "S": true, "S1": true, "S2": true, "S3": true, "S4": true, 
+                "ESRS 2": true, "E": true, "E1": true, "E2": true, "E3": true, "E4": true, "E5": true,
+                "S": true, "S1": true, "S2": true, "S3": true, "S4": true,
                 "G": true, "G1": true, "Tassonomia": true
             };
             appState.selection = initialSelection;
@@ -1197,7 +1234,7 @@
                     renderTemplateSelector(); // Rerender to show selection
                 }
             });
-            
+
             document.getElementById('file-importer').addEventListener('change', handleFileImport);
             document.getElementById('session-loader').addEventListener('change', handleLoadSessionFile);
         }
