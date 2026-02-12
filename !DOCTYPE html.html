@@ -382,6 +382,9 @@
         };
 
         // --- Stato dell'Applicazione ---
+        // --- Costanti Globali ---
+        const TAG_REGEX = /<(.|\n)*?>/g;
+
         let appState = {
             selection: {},
             reportData: {
@@ -466,6 +469,14 @@
             modalOverlay.appendChild(modalContent);
 
             document.body.appendChild(modalOverlay);
+        }
+
+        function isDataEmpty(drId) {
+            const data = appState.reportData[drId];
+            if (!data) return true;
+            const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+            const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+            return !hasQualitative && !hasQuantitative;
         }
 
         function formatNumberForDisplay(value) {
@@ -797,13 +808,7 @@
                         </div>
             `;
 
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
+
 
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
