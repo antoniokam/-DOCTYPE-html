@@ -783,7 +783,19 @@
             container.innerHTML = html;
         }
         
-        function renderReportPreview() {
+                // Pre-compiled regex for performance
+        const TAG_REGEX = /<(.|\n)*?>/g;
+
+        // Global helper to avoid re-creation on every render
+        const isDataEmpty = (drId) => {
+            const data = appState.reportData[drId];
+            if (!data) return true;
+            const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+            const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+            return !hasQualitative && !hasQuantitative;
+        };
+
+function renderReportPreview() {
             const container = document.getElementById('report-preview-container');
             container.className = `mt-8 ${appState.activeTemplate}`; // Applica la classe del template
             
@@ -797,13 +809,7 @@
                         </div>
             `;
 
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
+
 
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';

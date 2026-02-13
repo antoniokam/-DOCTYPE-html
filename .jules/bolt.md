@@ -1,0 +1,3 @@
+## 2024-05-22 - [Optimizing Render Loops in Vanilla JS]
+**Learning:** Even in vanilla JS/HTML apps, repeated allocation of closures and regex compilation in render loops (like `isDataEmpty` inside `renderReportPreview`) can be a bottleneck. Lifting these to a higher scope (module or global) is a clean, measurable optimization. Also, large single HTML files often have mixed line endings (CRLF), requiring binary mode processing for safe modification.
+**Action:** When optimizing render functions, look for constant regexes or helper functions defined *inside* the loop and lift them out. Always check line endings before modifying large legacy files programmatically.
