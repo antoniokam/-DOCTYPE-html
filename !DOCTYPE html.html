@@ -1107,13 +1107,15 @@
             const footer = "</body></html>";
             const sourceHTML = header + document.getElementById("report-preview-content").innerHTML + footer;
             
-            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+            const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/vnd.ms-word' });
+            const url = URL.createObjectURL(blob);
             const fileDownload = document.createElement("a");
             document.body.appendChild(fileDownload);
-            fileDownload.href = source;
+            fileDownload.href = url;
             fileDownload.download = 'bilancio_sostenibilita_cm_service.doc';
             fileDownload.click();
             document.body.removeChild(fileDownload);
+            URL.revokeObjectURL(url);
         }
 
         function navigateToDR(drId) {
