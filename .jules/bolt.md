@@ -1,0 +1,3 @@
+## 2025-05-23 - Robust File Patching for !DOCTYPE html.html
+**Learning:** The single-file application `!DOCTYPE html.html` contains CRLF (Windows) line endings and potentially mixed whitespace which can cause standard diff/patch tools (like `replace_with_git_merge_diff`) to fail unpredictably. Reading the file in binary mode (`rb`), normalizing newlines for matching, and writing back with the detected newline format (`newline='\r\n'`) via a dedicated Python script is the only reliable way to modify this file programmatically.
+**Action:** When tasked with modifying `!DOCTYPE html.html`, create a Python script to perform precise string replacements instead of relying on diff-based tools.
