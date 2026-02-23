@@ -11,13 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <!-- Librerie per l'esportazione in PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Librerie per l'importazione di file -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <!-- Libreria per Rich Text Editor (TinyMCE) -->
-    <script src="https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
 
     <style>
@@ -162,6 +157,33 @@
 
     <script>
         // --- Struttura Dati ESRS (AGGIORNATA) ---
+
+        // --- Librerie Lazy Load ---
+        const LIB_URLS = {
+            jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+            html2canvas: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+            pdfjs: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
+            mammoth: 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js',
+            tinymce: 'https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js'
+        };
+
+        const scriptCache = {};
+        const loadScript = (src, attributes = {}) => {
+            if (scriptCache[src]) {
+                return scriptCache[src];
+            }
+            const promise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                Object.keys(attributes).forEach(key => script.setAttribute(key, attributes[key]));
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+                document.head.appendChild(script);
+            });
+            scriptCache[src] = promise;
+            return promise;
+        };
+
         const esrsStructure = [
             {
                 id: 'ESRS 2', name: 'ESRS 2 - Informazioni Generali', alwaysActive: true,
@@ -558,7 +580,7 @@
             return visibleDRs;
         }
 
-        function renderDataEntryForm(drId) {
+        async function renderDataEntryForm(drId) {
             const mainContent = document.getElementById('report-builder-main');
             const dr = esrsDRDetails[drId];
             if (!dr) {
@@ -646,6 +668,13 @@
             mainContent.innerHTML = formHTML;
             
             if (dr.type === 'policy' || dr.type === 'targets' || dr.type === 'actions' || dr.type === 'mixed') {
+                try {
+                    await loadScript(LIB_URLS.tinymce, { referrerpolicy: 'origin' });
+                } catch (e) {
+                    console.error("Failed to load TinyMCE", e);
+                    showModal("Errore caricamento editor di testo. Verifica la connessione.");
+                    return;
+                }
                 tinymce.init({
                     selector: `#qualitative-${drId}`,
                     plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange formatpainter pageembed a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown importword exportword exportpdf',
@@ -954,10 +983,12 @@
             try {
                 let content = '';
                 if (file.name.endsWith('.docx')) {
+                    await loadScript(LIB_URLS.mammoth);
                     const arrayBuffer = await file.arrayBuffer();
                     const result = await mammoth.convertToHtml({ arrayBuffer });
                     content = result.value;
                 } else if (file.name.endsWith('.pdf')) {
+                    await loadScript(LIB_URLS.pdfjs);
                     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1058,7 +1089,14 @@
             reader.readAsText(file);
         }
 
-        function exportToPdf() {
+        async function exportToPdf() {
+            try {
+                await Promise.all([loadScript(LIB_URLS.jspdf), loadScript(LIB_URLS.html2canvas)]);
+            } catch (e) {
+                console.error("Failed to load PDF libraries", e);
+                showModal("Errore caricamento librerie PDF. Verifica la connessione.");
+                return;
+            }
             const { jsPDF } = window.jspdf;
             const reportContent = document.getElementById("report-preview-content");
             
