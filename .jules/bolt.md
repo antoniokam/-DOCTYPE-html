@@ -1,0 +1,3 @@
+## 2025-02-25 - Single HTML File Performance Bottleneck
+**Learning:** The application (`!DOCTYPE html.html`) loads all heavy libraries (jspdf, html2canvas, pdf.js, mammoth) in the `<head>`, blocking initial render and parsing. This is a significant bottleneck for a Single Page Application contained in one file. Lazy loading these on-demand is a high-impact optimization.
+**Action:** When working on this file, prioritize moving non-critical script tags to dynamic `loadScript` calls triggered by user actions (like Export/Import), but ensure `loadScript` handles concurrency and caching to prevent multiple injections.
