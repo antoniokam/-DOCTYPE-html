@@ -1,0 +1,3 @@
+## 2025-02-12 - Single File App Optimization
+**Learning:** Working with a single large HTML file containing CSS, HTML, and JS requires careful handling of line endings and context matching for replacements. `replace_with_git_merge_diff` can be sensitive to hidden characters like CRLF in such files.
+**Action:** When modifying single-file legacy apps or files with mixed/unknown line endings, consider reading the full content, normalizing newlines, and performing string replacement programmatically (e.g., via a Python script) rather than relying on patch tools that might fail on whitespace/encoding mismatches.
