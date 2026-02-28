@@ -1,0 +1,3 @@
+## 2024-02-28 - Regex Catastrophic Backtracking and Re-compilation in Render Loops
+**Learning:** In `!DOCTYPE html.html`, `isDataEmpty` was defined inside the `renderReportPreview` render loop and recreated continuously. Additionally, it used `/<(.|\n)*?>/g` to strip HTML tags, which is inefficient and prone to catastrophic backtracking due to capturing groups and alternation inside a repetition.
+**Action:** Always hoist functions that don't depend on local state out of render loops. Use `const TAG_REGEX = /<[^>]*>/g;` which is a global precompiled regex that avoids backtracking and is much faster for simple tag stripping.
