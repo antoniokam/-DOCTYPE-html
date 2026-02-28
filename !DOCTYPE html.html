@@ -486,6 +486,15 @@
             return value.replace(/\./g, '').replace(',', '.');
         }
 
+        const TAG_REGEX = /<[^>]*>/g;
+
+        const isDataEmpty = (drId) => {
+            const data = appState.reportData[drId];
+            if (!data) return true;
+            const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+            const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+            return !hasQualitative && !hasQuantitative;
+        };
 
         // --- Funzioni di Rendering ---
 
@@ -797,13 +806,6 @@
                         </div>
             `;
 
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
 
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
