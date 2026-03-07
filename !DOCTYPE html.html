@@ -412,6 +412,17 @@
         };
 
         // --- Funzioni Helper ---
+        // ⚡ Bolt: Global compiled regex to prevent recreation during render loops
+        const TAG_REGEX = /<[^>]*>/g;
+
+        // ⚡ Bolt: Hoisted from renderReportPreview to prevent recreation on every render
+        const isDataEmpty = (drId) => {
+            const data = appState.reportData[drId];
+            if (!data) return true;
+            const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+            const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+            return !hasQualitative && !hasQuantitative;
+        };
         const findNodeAndParents = (nodes, nodeId, parents = []) => {
             for (const node of nodes) {
                 if (node.id === nodeId) return { node, parents };
@@ -797,14 +808,6 @@
                         </div>
             `;
 
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
-
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
                 
@@ -1107,13 +1110,19 @@
             const footer = "</body></html>";
             const sourceHTML = header + document.getElementById("report-preview-content").innerHTML + footer;
             
-            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+            // ⚡ Bolt: Using Blob instead of encodeURIComponent to avoid blocking main thread with large strings
+            const blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+            const source = URL.createObjectURL(blob);
+
             const fileDownload = document.createElement("a");
             document.body.appendChild(fileDownload);
             fileDownload.href = source;
             fileDownload.download = 'bilancio_sostenibilita_cm_service.doc';
             fileDownload.click();
+
+            // ⚡ Bolt: Cleanup object URL to prevent memory leaks
             document.body.removeChild(fileDownload);
+            setTimeout(() => URL.revokeObjectURL(source), 100);
         }
 
         function navigateToDR(drId) {
