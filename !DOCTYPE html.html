@@ -412,6 +412,20 @@
         };
 
         // --- Funzioni Helper ---
+        // Bolt: Ottimizzazione Regex e Hoisting
+        // Questa regex sostituisce la precedente inefficace /<(.|\n)*?>/g
+        // per rimuovere in modo efficiente i tag HTML senza problemi di performance o ReDoS.
+        // La funzione isDataEmpty e' stata portata qui per evitare di ricrearla ad ogni rendering.
+        const TAG_REGEX = /<[^>]*>/g;
+
+        const isDataEmpty = (drId) => {
+                const data = appState.reportData[drId];
+                if (!data) return true;
+                const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+                return !hasQualitative && !hasQuantitative;
+            };
+
         const findNodeAndParents = (nodes, nodeId, parents = []) => {
             for (const node of nodes) {
                 if (node.id === nodeId) return { node, parents };
@@ -797,13 +811,6 @@
                         </div>
             `;
 
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
 
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
