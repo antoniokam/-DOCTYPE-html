@@ -961,14 +961,20 @@
                     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    let fullText = '';
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
+
+                    // Bolt ⚡: Process pages concurrently instead of sequentially
+                    // This creates an array of promises to fetch and process all pages at once,
+                    // preserving the order when Promise.all resolves.
+                    // This improves extraction speed significantly for multi-page PDFs.
+                    const pagePromises = Array.from({ length: pdf.numPages }, async (_, i) => {
+                        const page = await pdf.getPage(i + 1);
                         const textContent = await page.getTextContent();
                         const pageText = textContent.items.map(item => item.str).join(' ');
-                        fullText += `<p>${pageText.replace(/\n/g, '<br>')}</p>`;
-                    }
-                    content = fullText;
+                        return `<p>${pageText.replace(/\n/g, '<br>')}</p>`;
+                    });
+
+                    const pagesHtml = await Promise.all(pagePromises);
+                    content = pagesHtml.join('');
                 } else {
                     throw new Error('Formato file non supportato. Selezionare .docx o .pdf');
                 }
