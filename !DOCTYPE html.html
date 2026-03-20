@@ -412,6 +412,16 @@
         };
 
         // --- Funzioni Helper ---
+
+        // ⚡ Bolt Optimization: Cached TAG_REGEX and hoisted isDataEmpty to avoid recompilation and recreation during render loops
+        const TAG_REGEX = /<[^>]*>/g;
+        const isDataEmpty = (drId) => {
+            const data = appState.reportData[drId];
+            if (!data) return true;
+            const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+                        const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+            return !hasQualitative && !hasQuantitative;
+        };
         const findNodeAndParents = (nodes, nodeId, parents = []) => {
             for (const node of nodes) {
                 if (node.id === nodeId) return { node, parents };
@@ -796,15 +806,6 @@
                             <p class="text-2xl text-gray-600 mt-2">Redatto in conformità agli standard ESRS</p>
                         </div>
             `;
-
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
-
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
                 
