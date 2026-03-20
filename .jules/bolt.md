@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize isDataEmpty regex and hoisting]
+**Learning:** `isDataEmpty` was defined inside `renderReportPreview`, creating a new function instance on every report generation. The function also used `/<(.|\n)*?>/g` to strip HTML tags, recompiling this inefficient regex (due to capturing group and `|` alternation) on every single check within the `renderNodeData` loop.
+**Action:** Always hoist functions that process large loops outside the render block if they don't depend on closed scope. Precompile regexes into global constants (`const TAG_REGEX = /<[^>]*>/g;`) to avoid recompilation overhead. Simplify operations checking for empty strings using JS truthiness rules (`data[field.id]`).
