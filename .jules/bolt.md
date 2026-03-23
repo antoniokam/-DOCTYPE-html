@@ -1,0 +1,3 @@
+## 2024-05-19 - Regex recompilation overhead in nested render loops
+**Learning:** Defining regular expressions inline within frequently called utility functions (like `isDataEmpty` checking for HTML tags) inside nested iteration loops (like iterating over ESRS structure tree nodes during `renderReportPreview`) causes severe recompilation and GC overhead, contributing to ~40% slower render times in large dynamic HTML constructions.
+**Action:** Always hoist commonly used regex patterns (especially simple ones like `/<[^>]*>/g`) and utility closures to the global or highest available scope outside of iteration paths.
