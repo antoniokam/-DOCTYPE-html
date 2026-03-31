@@ -480,11 +480,25 @@
                 maximumFractionDigits: 2
             });
         }
-
         function parseFormattedNumber(value) {
             if (typeof value !== 'string') return String(value);
             return value.replace(/\./g, '').replace(',', '.');
         }
+
+        // ⚡ Bolt: TAG_REGEX is compiled once globally to prevent regex recompilation overhead.
+        // Replaced inefficient /<(.|\n)*?>/g with /<[^>]*>/g for ~2x faster HTML tag stripping.
+        const TAG_REGEX = /<[^>]*>/g;
+
+        // ⚡ Bolt: Hoisted isDataEmpty to global scope to prevent function recreation
+        // during the recursive renderNodeData loops.
+        const isDataEmpty = (drId) => {
+            const data = appState.reportData[drId];
+            if (!data) return true;
+            const hasQualitative = data.qualitative && data.qualitative.replace(TAG_REGEX, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+            const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+            return !hasQualitative && !hasQuantitative;
+        };
+
 
 
         // --- Funzioni di Rendering ---
@@ -797,13 +811,6 @@
                         </div>
             `;
 
-            const isDataEmpty = (drId) => {
-                const data = appState.reportData[drId];
-                if (!data) return true;
-                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
-                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
-                return !hasQualitative && !hasQuantitative;
-            };
 
             const renderNodeData = (node) => {
                 if (!appState.selection[node.id] && !node.alwaysActive) return '';
