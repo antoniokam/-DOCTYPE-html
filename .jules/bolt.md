@@ -1,0 +1,3 @@
+## 2024-05-24 - [Optimize isDataEmpty regex and lift it from render loop]
+**Learning:** In `!DOCTYPE html.html`, `isDataEmpty` was defined inside the `renderReportPreview` function (which runs on a loop/iteration for every topic/section). It also instantiated a fresh regex `/<(.|\n)*?>/g` for stripping HTML tags multiple times per render, which was incredibly slow.
+**Action:** Lift `isDataEmpty` to the global `// --- Funzioni Helper ---` scope and hoist the regex into a global constant `TAG_REGEX = /<[^>]*>/g` to prevent recompilation and recreation overhead during render loops. Note: When lifting quantitative field checks, explicitly verify against `undefined`/`null` instead of simple truthiness to prevent regressions where 0 is treated as empty.
