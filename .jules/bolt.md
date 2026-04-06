@@ -1,0 +1,3 @@
+## 2024-05-24 - [Avoid encodeURIComponent for large HTML exports]
+**Learning:** `encodeURIComponent` is synchronously blocking and computationally expensive for large strings (O(N) operations). Using it to generate Data URIs for exporting large HTML fragments (like reports) causes main thread freezes and can hit browser string length limits.
+**Action:** Replace `encodeURIComponent(html_string)` with `new Blob(['\ufeff', html_string], { type: 'application/msword' })` and `URL.createObjectURL(blob)` for exporting `.doc` files (or similar exports). This shifts the work to the background, avoiding UI freezes and size limits.
