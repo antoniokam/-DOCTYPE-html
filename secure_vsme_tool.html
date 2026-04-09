@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.tiny.cloud; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://placehold.co https://i.postimg.cc blob:; connect-src 'self' https://cdnjs.cloudflare.com blob:;">
+    <title>Piattaforma Reporting Sostenibilità ESRS - C.M. Service (SECURE)</title>
+    <!-- Tailwind CSS per lo styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font per la tipografia -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" integrity="sha384-QOwafhd4fG/SoT0YXgHQTcFT/kV7YBfTMBjb5WkYqszQdPkrU5VIYAgdUwsAqjsV" crossorigin="anonymous"></script>
+    <!-- Librerie per l'esportazione in PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-wnreF+PY012z315VQVnZ3tbuy7y+TBawJM1LzkEnbWDhGJWapljKEFNeigJS8JGs" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+    <!-- Librerie per l'importazione di file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha384-uLiAv4VcjM5H2Jsqzl8EajEaxPugj1CIzQaCjQ8c5//vC+elhxO5pZfXGxoLQi1W" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" integrity="sha384-jfWH2iyl+hjxYKMKu4edceLS7nIaIVICuVc1KmMFOHnWjdiy5LzfgXaCeXCnLS2k" crossorigin="anonymous"></script>
+    <!-- Libreria per Rich Text Editor (TinyMCE) -->
+    <script src="https://cdn.tiny.cloud/1/k5rodjnct29c8vlz54gxejc032dshnnv3vlyv22f8ofxa193/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapsible-content.expanded {
+            max-height: 2000px; /* Aumentato per contenuti lunghi */
+            transition: max-height 0.5s ease-in;
+        }
+        .nav-link.active {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+            font-weight: 600;
+        }
+        #save-notification {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .action-btn:disabled, .nav-arrow:disabled {
+            background-color: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+        /* --- Stili Globali per l'anteprima --- */
+        #report-preview-content p {
+            text-align: justify;
+        }
+
+        /* --- Stili per i Template del Report --- */
+        .template-selector .template-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .template-selector .template-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .template-selector .template-card.selected {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Template 1: Corporate Blue */
+        .template-1 #report-preview-content { font-family: 'Inter', sans-serif; }
+        .template-1 #report-preview-content h1, .template-1 #report-preview-content h2, .template-1 #report-preview-content h3, .template-1 #report-preview-content h4 { font-family: 'Lora', serif; }
+        .template-1 #report-preview-content h1 { font-size: 2.8rem; color: #1e3a8a; border-bottom: 3px solid #1e3a8a; }
+        .template-1 #report-preview-content h2 { font-size: 1.8rem; color: #1d4ed8; margin-top: 2.5rem; border-left: 4px solid #1d4ed8; padding-left: 1rem; }
+        .template-1 #report-preview-content h3 { font-size: 1.4rem; color: #1e40af; margin-top: 2rem; border-bottom: 1px solid #dbeafe; }
+        .template-1 #report-preview-content h4 { font-size: 1.1rem; color: #374151; font-weight: bold; }
+        .template-1 #report-preview-content table th { background-color: #eff6ff; color: #1e40af; }
+
+        /* Template 2: Eco Green */
+        .template-2 #report-preview-content { font-family: 'Roboto', sans-serif; background-color: #fcfdfc; }
+        .template-2 #report-preview-content h1 { font-size: 2.8rem; color: #14532d; border-bottom: 3px solid #166534; }
+        .template-2 #report-preview-content h2 { font-size: 1.8rem; color: #15803d; margin-top: 2.5rem; border-bottom: 2px solid #a7f3d0; padding-bottom: 0.5rem; }
+        .template-2 #report-preview-content h3 { font-size: 1.4rem; color: #16a34a; margin-top: 2rem; }
+        .template-2 #report-preview-content h4 { font-size: 1.1rem; color: #1f2937; font-weight: bold; }
+        .template-2 #report-preview-content table th { background-color: #dcfce7; color: #14532d; }
+        .template-2 #report-preview-content a { color: #166534; }
+
+        /* Template 3: Modern Tech */
+        .template-3 #report-preview-content { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; }
+        .template-3 #report-preview-content h1 { font-size: 2.8rem; color: #212529; border-bottom: 3px solid #007bff; }
+        .template-3 #report-preview-content h2 { font-size: 1.8rem; color: #212529; background-color: #e9ecef; margin-top: 2.5rem; padding: 0.5rem 1rem; border-left: 4px solid #007bff; }
+        .template-3 #report-preview-content h3 { font-size: 1.4rem; color: #495057; margin-top: 2rem; border-bottom: 1px solid #ced4da; }
+        .template-3 #report-preview-content h4 { font-size: 1.1rem; color: #343a40; font-weight: bold; }
+        .template-3 #report-preview-content table th { background-color: #343a40; color: #ffffff; }
+        .template-3 #report-preview-content a { color: #0056b3; }
+
+        /* Template 4: Formal Report */
+        .template-4 #report-preview-content { font-family: 'Inter', sans-serif; background-color: #ffffff; border: 1px solid #dee2e6; padding: 2.5rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1); }
+        .template-4 #report-preview-content h1, .template-4 #report-preview-content h2, .template-4 #report-preview-content h3, .template-4 #report-preview-content h4 { font-family: 'Lora', serif; color: #212529; }
+        .template-4 #report-preview-content h1 { text-align: center; font-size: 3rem; border-top: 4px double #343a40; border-bottom: 4px double #343a40; padding: 1rem 0; }
+        .template-4 #report-preview-content h2 { font-size: 1.7rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 2.5rem; border-bottom: 1px solid #adb5bd; }
+        .template-4 #report-preview-content h3 { font-size: 1.3rem; font-weight: bold; }
+        .template-4 #report-preview-content h4 { font-size: 1.1rem; font-style: italic; }
+        .template-4 #report-preview-content table { border: 1px solid #adb5bd; }
+        .template-4 #report-preview-content th { background-color: #e9ecef; }
+
+        /* Template 5: Human-Centric */
+        .template-5 #report-preview-content { font-family: 'Inter', sans-serif; background-color: #fffaf0; color: #44403c; }
+        .template-5 #report-preview-content h1, .template-5 #report-preview-content h2, .template-5 #report-preview-content h3, .template-5 #report-preview-content h4 { color: #a16207; }
+        .template-5 #report-preview-content h1 { font-size: 2.8rem; border-bottom: 3px solid #f59e0b; }
+        .template-5 #report-preview-content h2 { font-size: 1.8rem; margin-top: 2.5rem; background-color: #fef3c7; padding: 0.5rem 1rem; border-radius: 0.5rem; }
+        .template-5 #report-preview-content h3 { font-size: 1.4rem; font-weight: bold; }
+        .template-5 #report-preview-content h4 { font-size: 1.1rem; color: #78350f; font-weight: bold; }
+        .template-5 #report-preview-content table { border-radius: 0.5rem; overflow: hidden; border: none; }
+        .template-5 #report-preview-content th { background-color: #fcd34d; color: #78350f; }
+        .template-5 #report-preview-content td { border-bottom: 1px solid #fef3c7; }
+        .template-5 #report-preview-content a { color: #b45309; }
+        .template-5 #report-preview-content img { border-radius: 0.75rem; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-screen-xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center flex-wrap">
+            <div class="flex-grow">
+                <h1 class="text-3xl font-bold leading-tight text-gray-900">
+                    Piattaforma Reporting Sostenibilità ESRS
+                </h1>
+                <p class="text-gray-500 mt-1">Bilancio di Sostenibilità C.M. Service 2024</p>
+            </div>
+            <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                <button id="load-session-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Carica Sessione</button>
+                <button id="save-session-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salva Sessione</button>
+                <img src="https://i.postimg.cc/sDKKB8Tn/cm-service-cover.jpg" alt="Logo C.M. Service" class="h-12 ml-4">
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-screen-xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div id="materiality-selector-container"></div>
+            <div id="report-builder-container" class="mt-8"></div>
+            <div id="report-generator-container" class="mt-8"></div>
+            <div id="report-preview-container" class="mt-8"></div>
+        </div>
+    </main>
+
+    <div id="save-notification" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-10">
+        Dati salvati con successo!
+    </div>
+
+    <!-- Input nascosti per l'importazione dei file -->
+    <input type="file" id="file-importer" accept=".pdf,.docx" style="display: none;">
+    <input type="file" id="session-loader" accept=".json" style="display: none;">
+
+    <footer class="text-center py-4 text-sm text-gray-500 mt-8">
+        <p>© 2025 C.M. Service. Software sviluppato da Antonio Canonico. Tutti i diritti riservati ai sensi dell'Art. 12-bis della Legge n. 633/1941.</p>
+    </footer>
+
+    <script>
+        // --- Struttura Dati ESRS (AGGIORNATA) ---
+        const esrsStructure = [
+            {
+                id: 'ESRS 2', name: 'ESRS 2 - Informazioni Generali', alwaysActive: true,
+                sections: {
+                    basis_for_preparation: { title: "Criteri per la redazione", requirements: ['BP-1', 'BP-2'] },
+                    governance: { title: "Governance", requirements: ['GOV-1', 'IRO-1_ref', 'GOV-2', 'GOV-3', 'GOV-4', 'GOV-5'] },
+                    strategy: { title: "Strategia", requirements: ['SBM-1', 'SBM-2', 'SBM-3'] },
+                    iro_management: { title: "Gestione degli impatti, dei rischi e delle opportunità", requirements: ['IRO-1', 'IRO-2'] },
+                    mdr: { title: "Informativa su politiche e azioni (MDR)", requirements: ['MDR-P', 'MDR-A', 'MDR-M', 'MDR-T'] }
+                }
+            },
+            {
+                id: 'E', name: 'Ambientale', children: [
+                    { id: 'E1', name: 'ESRS E1 - Cambiamento Climatico', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['GOV-3_E1_ref', 'E1-1', 'SBM-3_E1', 'IRO-1_E1_ref', 'E1-2', 'E1-3', 'E1-4', 'E1-5', 'E1-6'] }
+                    }},
+                    { id: 'E2', name: 'ESRS E2 - Inquinamento', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['IRO-1_E2_ref', 'E2-1', 'E2-2', 'E2-3', 'E2-4', 'E2-5', 'E2-6'] }
+                    }},
+                    { id: 'E3', name: 'ESRS E3 - Acqua e Risorse Marine', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['IRO-1_E3_ref', 'E3-1', 'E3-2', 'E3-3', 'E3-4', 'E3-5'] }
+                    }},
+                    { id: 'E4', name: 'ESRS E4 - Biodiversità ed Ecosistemi', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['E4-1', 'SBM-3_E4', 'IRO-1_E4_ref', 'E4-2', 'E4-3', 'E4-4', 'E4-5', 'E4-6'] }
+                    }},
+                    { id: 'E5', name: 'ESRS E5 - Uso Risorse ed Economia Circolare', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['IRO-1_E5_ref', 'E5-1', 'E5-2', 'E5-3', 'E5-4', 'E5-5', 'E5-6'] }
+                    }}
+                ]
+            },
+            {
+                id: 'S', name: 'Sociale', children: [
+                    { id: 'S1', name: 'ESRS S1 - Forza Lavoro Propria', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['SBM-2_S1_ref', 'SBM-3_S1', 'S1-1', 'S1-2', 'S1-3', 'S1-4', 'S1-5', 'S1-6', 'S1-7', 'S1-8', 'S1-9', 'S1-10', 'S1-11', 'S1-12', 'S1-13', 'S1-14', 'S1-15', 'S1-16', 'S1-17'] }
+                    }},
+                    { id: 'S2', name: 'ESRS S2 - Lavoratori nella Catena del Valore', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['SBM-2_S2_ref', 'SBM-3_S2', 'S2-1', 'S2-2', 'S2-3', 'S2-4', 'S2-5'] }
+                    }},
+                    { id: 'S3', name: 'ESRS S3 - Comunità Interessate', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['SBM-2_S3_ref', 'SBM-3_S3', 'S3-1', 'S3-2', 'S3-3', 'S3-4', 'S3-5'] }
+                    }},
+                    { id: 'S4', name: 'ESRS S4 - Consumatori e Utenti Finali', sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['SBM-2_S4_ref', 'SBM-3_S4', 'S4-1', 'S4-2', 'S4-3', 'S4-4', 'S4-5'] }
+                    }}
+                ]
+            },
+            {
+                id: 'G', name: 'Governance', children: [
+                    { id: 'G1', name: 'ESRS G1 - Condotta Aziendale', alwaysActive: true, sections: {
+                        requirements: { title: "Requisiti Informativa", requirements: ['GOV-1_G1', 'IRO-1_G1_ref', 'G1-1', 'G1-2', 'G1-3', 'G1-4', 'G1-5', 'G1-6'] }
+                    }}
+                ]
+            },
+            {
+                id: 'Tassonomia', name: 'Tassonomia Europea', sections: {
+                    tassonomia: { title: "Tassonomia Europea", requirements: ['TAX-1'] }
+                }
+            }
+        ];
+
+        // --- Definizione Dettagliata dei Requisiti di Informativa (DR) (AGGIORNATA) ---
+        const esrsDRDetails = {
+            'BP-1': { title: 'Criteri generali per la redazione delle dichiarazioni sulla sostenibilità', type: 'policy', description: "Descrivere i criteri generali seguiti (conformità agli ESRS), il perimetro di rendicontazione (società incluse, confini), il periodo di riferimento, le eventuali limitazioni o esclusioni significative, e l'approccio all'analisi di doppia materialità." },
+            'BP-2': { title: 'Informativa in relazione a circostanze specifiche', type: 'policy', description: "Spiegare come sono state gestite informazioni prospettiche, stime (specialmente per la catena del valore, se applicabile), incertezze e gli eventuali cambiamenti nei criteri rispetto a periodi precedenti." },
+            'GOV-1': { title: 'Ruolo degli organi di amministrazione, direzione e controllo', type: 'policy', description: "Descrivere la composizione e il ruolo del CdA, della direzione e degli organi di controllo riguardo alla supervisione delle tematiche di sostenibilità, inclusi competenze specifiche e processi decisionali." },
+            'GOV-2': { title: "Informazioni fornite agli organi di amministrazione, direzione e controllo dell'impresa e questioni di sostenibilità da questi affrontate", type: 'policy', description: "Dettagliare come e quali informazioni sulla sostenibilità (IRO materiali, performance, politiche) vengono comunicate agli organi di governance e quali tematiche specifiche sono state trattate da questi organi nel periodo di riferimento." },
+            'GOV-3': { title: 'Integrazione delle prestazioni in termini di sostenibilità nei sistemi di incentivazione', type: 'policy', description: "Descrivere se e come le performance di sostenibilità (legate agli IRO materiali) sono integrate nei sistemi di remunerazione e incentivazione del management e/o dei dipendenti." },
+            'GOV-4': { title: 'Dichiarazione sulla dovuta diligenza', type: 'policy', description: "Descrivere l'approccio e il processo di due diligence adottato dall'impresa in relazione alla sostenibilità, per identificare, prevenire, mitigare e rendicontare gli impatti negativi effettivi e potenziali su ambiente e persone." },
+            'GOV-5': { title: 'Gestione del rischio e controlli interni sulla rendicontazione di sostenibilità', type: 'policy', description: "Descrivere il sistema di gestione dei rischi di sostenibilità e i controlli interni implementati per garantire l'affidabilità della rendicontazione di sostenibilità." },
+            'SBM-1': { title: 'Strategia, modello di business e catena del valore', type: 'policy', description: "Descrivere il modello di business di C.M. Service, la sua strategia complessiva e la sua catena del valore (attività principali, mercati, clienti chiave, fornitori chiave), evidenziando le interconnessioni con le tematiche di sostenibilità." },
+            'SBM-2': { title: 'Interessi e opinioni dei portatori di interessi', type: 'policy', description: "Descrivere come l'azienda identifica e coinvolge i propri stakeholder, quali sono i loro principali interessi e opinioni riguardo alla sostenibilità e come questi vengono considerati nelle decisioni aziendali." },
+            'SBM-3': { title: 'Impatti, rischi e opportunità rilevanti e loro interazione con la strategia e il modello aziendale', type: 'policy', description: "Presentare una sintesi degli impatti, rischi e opportunità (IRO) di sostenibilità identificati come materiali e spiegare come questi influenzano e sono influenzati dalla strategia e dal modello di business dell'azienda." },
+            'IRO-1': { title: "Descrizione del processo per individuare e valutare gli impatti, i rischi e le opportunità rilevanti", type: 'policy', description: "Descrivere in dettaglio il processo svolto per l'analisi di doppia materialità, i criteri utilizzati per la valutazione dell'impatto e della rilevanza finanziaria, e gli stakeholder coinvolti." },
+            'IRO-2': { title: "Obblighi di informativa degli ESRS oggetto della dichiarazione sulla sostenibilità dell'impresa", type: 'policy', description: "Questa sezione funge da indice, mappando gli obblighi informativi (DR) trattati nel documento e dove trovarli." },
+            'MDR-P': { title: 'Politiche (MDR-P)', type: 'policy', description: 'Descrivere le politiche quadro adottate per gestire le questioni materiali di sostenibilità.' },
+            'MDR-A': { title: 'Azioni (MDR-A)', type: 'policy', description: 'Descrivere le azioni quadro e le risorse in relazione a questioni di sostenibilità materiale.' },
+            'MDR-M': { title: 'Metriche (MDR-M)', type: 'policy', description: 'Descrivere le metriche quadro relative a questioni di sostenibilità materiale.' },
+            'MDR-T': { title: 'Obiettivi (MDR-T)', type: 'policy', description: 'Descrivere il monitoraggio dell’efficacia delle politiche e delle azioni attraverso gli obiettivi quadro.' },
+            'E1-1': { title: 'Piano di transizione per la mitigazione dei cambiamenti climatici', type: 'policy', description: "Descrivere il piano di transizione dell'impresa per la mitigazione del cambiamento climatico, in linea con l'obiettivo di 1.5°C." },
+            'SBM-3_E1': { title: 'Interazione IRO climatici con strategia e modello di business', type: 'policy', description: "Descrivere come gli impatti, i rischi e le opportunità materiali legati al clima interagiscono con la strategia e il modello di business.", isCrossReference: true },
+            'E1-2': { title: 'Politiche relative alla mitigazione dei cambiamenti climatici e all\'adattamento agli stessi', type: 'policy', description: "Descrivere le politiche adottate per la mitigazione e l'adattamento ai cambiamenti climatici." },
+            'E1-3': { title: 'Azioni e risorse relative alle politiche in materia di cambiamenti climatici', type: 'actions', description: "Descrivere le azioni chiave intraprese e le risorse (CapEx/OpEx) allocate per attuare le politiche climatiche." },
+            'E1-4': { title: 'Obiettivi relativi alla mitigazione dei cambiamenti climatici e all\'adattamento agli stessi', type: 'targets', description: "Indicare gli obiettivi quantitativi e qualitativi per la mitigazione e l'adattamento, specificando l'anno base, l'anno target e i progressi." },
+            'E1-5': { title: 'Consumo di energia e mix energetico', type: 'mixed', description: "Fornire dati sul consumo energetico totale, suddiviso per fonte (rinnovabile e non rinnovabile).", fields: [
+                { id: 'totalEnergy', label: 'Consumo totale di energia', unit: 'MWh' },
+                { id: 'fossilEnergy', label: 'Consumo di energia da fonti fossili', unit: 'MWh' },
+                { id: 'renewableEnergy', label: 'Consumo di energia da fonti rinnovabili', unit: 'MWh' },
+            ]},
+            'E1-6': { title: "Emissioni lorde di GES di ambito 1, 2, 3 ed emissioni totali di GES", type: 'mixed', description: "Fornire dati sulle emissioni di GHG Scope 1, Scope 2 (location e market-based) e le categorie rilevanti di Scope 3.", fields: [
+                { id: 'scope1', label: 'Emissioni Scope 1', unit: 'tCO2e' },
+                { id: 'scope2_location', label: 'Emissioni Scope 2 (Location-based)', unit: 'tCO2e' },
+                { id: 'scope2_market', label: 'Emissioni Scope 2 (Market-based)', unit: 'tCO2e' },
+                { id: 'scope3', label: 'Emissioni Scope 3', unit: 'tCO2e' },
+            ]},
+            'E2-1': { title: 'Politiche relative all\'inquinamento', type: 'policy', description: 'Descrivere le politiche per prevenire e controllare l\'inquinamento (es. gestione rifiuti, uso sostanze chimiche, emissioni).' },
+            'E2-2': { title: 'Azioni e risorse connesse all\'inquinamento', type: 'actions', description: 'Dettaglio delle azioni specifiche e risorse dedicate.' },
+            'E2-3': { title: 'Obiettivi connessi all\'inquinamento', type: 'targets', description: 'Presentazione degli obiettivi di riduzione dell\'inquinamento.' },
+            'E2-4': { title: 'Inquinamento dell’aria, dell’acqua e del suolo', type: 'mixed', description: 'Informazioni quantitative sull\'inquinamento, come le emissioni di inquinanti atmosferici.' },
+            'E2-5': { title: 'Sostanze preoccupanti e sostanze estremamente preoccupanti', type: 'policy', description: 'Informazioni sulla produzione, uso e gestione di sostanze chimiche pericolose.' },
+            'E2-6': { title: 'Effetti finanziari previsti dagli impatti, rischi e opportunità legati all’inquinamento', type: 'policy', description: 'Descrivere gli effetti finanziari potenziali derivanti da rischi e opportunità legati all\'inquinamento.' },
+            'E3-1': { title: 'Politiche connesse alle acque e alle risorse marine', type: 'policy', description: 'Descrivere le politiche per la gestione sostenibile dell\'acqua e delle risorse marine.' },
+            'E3-2': { title: 'Azioni e risorse connesse alle acque e alle risorse marine', type: 'actions', description: 'Dettaglio delle azioni per la gestione dell\'acqua.' },
+            'E3-3': { title: 'Obiettivi connessi alle acque e alle risorse marine', type: 'targets', description: 'Presentazione degli obiettivi di gestione idrica.' },
+            'E3-4': { title: 'Consumo di acqua', type: 'mixed', description: 'Informazioni sul consumo totale di acqua e sul consumo in aree a stress idrico.' },
+            'E3-5': { title: 'Effetti finanziari previsti derivanti da impatti, rischi e opportunità legati alle risorse idriche e marine', type: 'policy', description: 'Descrivere gli effetti finanziari potenziali derivanti da rischi e opportunità legati all\'acqua.' },
+            'E4-1': { title: 'Piano di transizione e considerazione della biodiversità e degli ecosistemi', type: 'policy', description: 'Descrivere il piano di transizione per la biodiversità e come viene considerata nella strategia.' },
+            'SBM-3_E4': { title: 'Interazione IRO biodiversità con strategia', type: 'policy', description: "Descrivere come gli impatti, i rischi e le opportunità materiali legati alla biodiversità interagiscono con la strategia.", isCrossReference: true },
+            'E4-2': { title: 'Politiche relative alla biodiversità e agli ecosistemi', type: 'policy', description: 'Descrivere le politiche per la tutela della biodiversità.' },
+            'E4-3': { title: 'Azioni e risorse relative alla biodiversità e agli ecosistemi', type: 'actions', description: 'Dettaglio delle azioni e delle risorse per la biodiversità.' },
+            'E4-4': { title: 'Obiettivi relativi alla biodiversità e all\'ecosistema', type: 'targets', description: 'Presentazione degli obiettivi per la tutela della biodiversità.' },
+            'E4-5': { title: "Metriche di impatto relative alla biodiversità e al cambiamento degli ecosistemi", type: 'mixed', description: "Fornire metriche e descrizioni sugli impatti materiali sulla biodiversità e sugli ecosistemi." },
+            'E4-6': { title: "Effetti finanziari previsti dai rischi e dalle opportunità legati alla biodiversità e agli ecosistemi", type: 'policy', description: "Descrivere gli effetti finanziari potenziali derivanti da rischi e opportunità legati alla biodiversità." },
+            'E5-1': { title: 'Politiche relative all\'uso delle risorse e all\'economia circolare', type: 'policy', description: 'Descrivere le politiche su acquisti sostenibili, gestione rifiuti, efficienza nell\'uso delle risorse.' },
+            'E5-2': { title: 'Azioni e risorse relative all\'uso delle risorse e all\'economia circolare', type: 'actions', description: 'Dettaglio delle azioni specifiche (es. riciclo, riuso, riduzione consumi) e risorse dedicate.' },
+            'E5-3': { title: 'Obiettivi relativi all\'uso delle risorse e all\'economia circolare', type: 'targets', description: 'Presentazione degli obiettivi di economia circolare.' },
+            'E5-4': { title: 'Flussi di risorse in entrata', type: 'mixed', description: 'Metriche sull\'uso di materiali chiave.', fields: [
+                { id: 'totalWeightProducts', label: 'Peso totale dei prodotti in entrata', unit: 'tonnellate' },
+                { id: 'totalWeightPackaging', label: 'Peso totale degli imballaggi in entrata', unit: 'tonnellate' }
+            ]},
+            'E5-5': { title: 'Flussi di risorse in uscita', type: 'mixed', description: 'Metriche sulla produzione e gestione dei rifiuti.', fields: [
+                { id: 'totalWaste', label: 'Rifiuti totali', unit: 'tonnellate' },
+                { id: 'recycledWaste', label: 'Rifiuti riciclati', unit: 'tonnellate' }
+            ]},
+            'E5-6': { title: "Effetti finanziari previsti dall’uso di risorse materiali e rischi e opportunità legati all’economia circolare", type: 'policy', description: "Descrivere gli effetti finanziari potenziali derivanti da rischi e opportunità legati all'uso delle risorse e all'economia circolare." },
+            'SBM-3_S1': { title: 'Interazione IRO con strategia (Forza Lavoro)', type: 'policy', description: "Descrivere come gli impatti, i rischi e le opportunità materiali legati alla forza lavoro interagiscono con la strategia e il modello di business.", isCrossReference: true },
+            'S1-1': { title: 'Politiche relative alla forza lavoro propria', type: 'policy', description: "Descrivere le politiche per gestire gli impatti, i rischi e le opportunità relativi alla forza lavoro." },
+            'S1-2': { title: 'Processi di coinvolgimento dei lavoratori propri e dei rappresentanti dei lavoratori', type: 'policy', description: "Descrivere i processi di coinvolgimento dei lavoratori e dei loro rappresentanti riguardo agli impatti." },
+            'S1-3': { title: 'Processi per porre rimedio agli impatti negativi e canali che consentono ai lavoratori propri di sollevare preoccupazioni', type: 'policy', description: "Descrivere i canali a disposizione dei lavoratori per sollevare preoccupazioni e i processi per porre rimedio agli impatti negativi." },
+            'S1-4': { title: 'Interventi su impatti rilevanti per la forza lavoro propria', type: 'actions', description: "Descrivere le azioni intraprese per gestire gli impatti materiali, i rischi e le opportunità relativi alla forza lavoro." },
+            'S1-5': { title: 'Obiettivi legati alla gestione degli impatti negativi rilevanti', type: 'targets', description: "Descrivere gli obiettivi fissati per la gestione degli impatti, dei rischi e delle opportunità." },
+            'S1-6': { title: "Caratteristiche dei dipendenti dell'impresa", type: 'mixed', description: "Dati sui dipendenti, inclusi numero totale, genere, tipo di contratto e turnover.", fields: [
+                { id: 'totalEmployees', label: 'Numero totale dipendenti', unit: 'numero' },
+                { id: 'femaleEmployees', label: '% Donne', unit: '%' },
+                { id: 'permanentContracts', label: '% Contratti a tempo indeterminato', unit: '%' },
+                { id: 'turnoverRate', label: 'Tasso di turnover', unit: '%' },
+            ]},
+            'S1-7': { title: "Caratteristiche dei lavoratori non dipendenti nella forza lavoro propria dell'impresa", type: 'mixed', description: "Metriche sui lavoratori non dipendenti (numero, tipologia)." , fields: [
+                { id: 'nonEmployees', label: 'Numero totale lavoratori non dipendenti', unit: 'numero' }
+            ]},
+            'S1-8': {
+                title: 'Copertura della contrattazione collettiva e dialogo sociale',
+                type: 'mixed',
+                description: "Informazioni sulla percentuale di dipendenti coperti da contrattazione collettiva e descrizione dei processi di dialogo sociale con i rappresentanti dei lavoratori.",
+                fields: [
+                    { id: 'collectiveBargainingCoverage', label: '% di dipendenti coperti da contrattazione collettiva', unit: '%' }
+                ]
+            },
+            'S1-9': { title: 'Metriche di diversità', type: 'mixed', description: 'Dati sulla diversità per genere, età, disabilità nelle varie categorie professionali e negli organi di governance.' , fields: [
+                { id: 'genderDiversityBoard', label: '% Donne nel CdA', unit: '%' }
+            ]},
+            'S1-10': { title: 'Salari adeguati', type: 'policy', description: 'Dichiarazione e informazioni sulla politica dei salari adeguati.' },
+            'S1-11': { title: 'Protezione sociale', type: 'policy', description: 'Informazioni sulla copertura della protezione sociale per i dipendenti (es. previdenza sociale, assicurazione contro gli infortuni, assistenza sanitaria integrativa se fornita dall\'azienda).' },
+            'S1-12': { title: 'Persone con disabilità', type: 'mixed', description: 'Numero e percentuale di dipendenti con disabilità.' , fields: [
+                { id: 'disabledEmployees', label: 'Numero dipendenti con disabilità', unit: 'numero' }
+            ]},
+            'S1-13': { title: 'Metriche di formazione e sviluppo delle competenze', type: 'mixed', description: 'Ore medie di formazione per dipendente e per categoria professionale/genere.', fields: [
+                { id: 'avgTrainingHours', label: 'Ore medie di formazione per dipendente', unit: 'ore' }
+            ]},
+            'S1-14': { title: 'Metriche di salute e sicurezza', type: 'mixed', description: "Dati su infortuni sul lavoro, malattie professionali e giorni di lavoro persi.", fields: [
+                { id: 'workAccidents', label: 'Numero di infortuni registrabili', unit: 'numero' },
+                { id: 'ltifr', label: 'Tasso di frequenza infortuni (LTIFR)', unit: 'valore' },
+                 { id: 'lostDays', label: 'Giornate di lavoro perse', unit: 'giorni' },
+            ]},
+             'S1-15': { title: "Metriche dell'equilibrio tra vita professionale e vita privata", type: 'policy', description: 'Informazioni su smart working, congedi parentali usufruiti.' },
+            'S1-16': { title: 'Metriche di retribuzione (divario retributivo e retribuzione totale)', type: 'mixed', description: 'Divario retributivo di genere, rapporto retribuzione più alta/mediana (se calcolato).', fields: [
+                { id: 'genderPayGap', label: 'Divario retributivo di genere', unit: '%' }
+            ]},
+            'S1-17': { title: 'Incidenti, denunce e impatti gravi in materia di diritti umani', type: 'policy', description: 'Numero di incidenti/denunce relativi a discriminazione o altri impatti sui diritti umani' },
+            'SBM-3_S2': { title: "Impatti materiali, rischi e opportunità e loro interazione con la strategia e il modello di business", type: 'policy', description: "Descrivere come gli impatti, i rischi e le opportunità materiali legati ai lavoratori nella catena del valore interagiscono con la strategia.", isCrossReference: true },
+            'S2-1': { title: "Politiche connesse ai lavoratori nella catena del valore", type: 'policy', description: "Descrivere le politiche per promuovere il rispetto dei diritti dei lavoratori lungo la catena del valore." },
+            'S2-2': { title: "Processi di coinvolgimento dei lavoratori nella catena del valore in merito agli impatti", type: 'policy', description: "Descrivere le modalità di dialogo e consultazione." },
+            'S2-3': { title: "Processi per porre rimedio agli impatti negativi e canali che consentono ai lavoratori nella catena del valore di esprimere preoccupazioni", type: 'policy', description: "Descrizione dei meccanismi di reclamo e rimedio interni." },
+            'S2-4': { title: "Interventi su impatti rilevanti per i lavoratori nella catena del valore", type: 'actions', description: "Dettaglio delle azioni specifiche intraprese e della loro efficacia." },
+            'S2-5': { title: "Obiettivi legati alla gestione degli impatti negativi rilevanti", type: 'targets', description: "Presentazione degli obiettivi specifici per i lavoratori nella catena del valore." },
+            'SBM-3_S3': { title: "Impatti materiali, rischi e opportunità e loro interazione con la strategia e il modello di business", type: 'policy', description: "Descrivere come gli impatti, i rischi e le opportunità materiali legati alle comunità interagiscono con la strategia.", isCrossReference: true },
+            'S3-1': { title: "Politiche relative alle comunità interessate", type: 'policy', description: "Descrivere le politiche per minimizzare gli impatti negativi sulle comunità locali." },
+            'S3-2': { title: "Processi di coinvolgimento delle comunità interessate in merito agli impatti", type: 'policy', description: "Modalità di raccolta feedback e coinvolgimento." },
+            'S3-3': { title: "Processi per porre rimedio agli impatti negativi e canali che consentono alle comunità interessate di esprimere preoccupazioni", type: 'policy', description: "Gestione dei reclami." },
+            'S3-4': { title: "Interventi su impatti rilevanti sulle comunità interessate", type: 'actions', description: "Azioni intraprese per migliorare la qualità della vita delle comunità." },
+            'S3-5': { title: "Obiettivi legati alla gestione degli impatti rilevanti negativi", type: 'targets', description: "Obiettivi specifici (es. donazioni, progetti locali)." },
+            'SBM-3_S4': { title: "Interazione IRO con strategia (Consumatori)", type: 'policy', description: "Descrivere come gli impatti, i rischi e le opportunità materiali legati ai consumatori interagiscono con la strategia.", isCrossReference: true },
+            'S4-1': { title: "Politiche connesse ai consumatori e agli utilizzatori finali", type: 'policy', description: "Descrivere le politiche per fornire prodotti e servizi sicuri e di qualità." },
+            'S4-2': { title: "Processi di coinvolgimento dei consumatori e degli utilizzatori finali in merito agli impatti", type: 'policy', description: "Modalità di raccolta feedback e coinvolgimento." },
+            'S4-3': { title: "Processi per porre rimedio agli impatti negativi e canali che consentono ai consumatori e agli utilizzatori finali di esprimere preoccupazioni", type: 'policy', description: "Gestione dei reclami." },
+            'S4-4': { title: "Interventi su impatti rilevanti per i consumatori e gli utilizzatori finali", type: 'actions', description: "Azioni intraprese per migliorare sicurezza, qualità, accessibilità, privacy." },
+            'S4-5': { title: "Obiettivi legati alla gestione degli impatti rilevanti negativi", type: 'targets', description: "Obiettivi specifici (es. soddisfazione cliente, riduzione reclami)." },
+            'GOV-1_G1': { title: 'Ruolo degli organi di amministrazione, direzione e controllo', type: 'policy', description: "Descrivere la cultura aziendale, il Codice Etico, impegno per l'integrità." , isCrossReference: true },
+            'G1-1': { title: 'Politiche in materia di cultura d\'impresa e condotta delle imprese', type: 'policy', description: "Descrivere la cultura aziendale, il Codice Etico e le politiche relative alla condotta aziendale, inclusa la lotta alla corruzione e il whistleblowing." },
+            'G1-2': { title: 'Gestione dei rapporti con i fornitori', type: 'policy', description: "Descrivere le politiche e le pratiche per la gestione dei fornitori, inclusi i criteri di selezione ESG e il Codice di Condotta Fornitori." },
+            'G1-3': { title: 'Prevenzione e individuazione della corruzione attiva e passiva', type: 'policy', description: "Descrivere il sistema per prevenire, individuare e rispondere a casi di corruzione." },
+            'G1-4': { title: 'Casi accertati di corruzione attiva e passiva', type: 'mixed', description: "Informazioni su casi di corruzione o concussione durante il periodo di riferimento.", fields: [
+                { id: 'convictions', label: 'Numero di condanne per corruzione', unit: 'numero' },
+                { id: 'fines', label: 'Importo delle multe per corruzione', unit: '€' },
+            ]},
+            'G1-5': { title: 'Attività di influenza politica e di lobbying', type: 'policy', description: "Descrivere le attività di lobbying, le principali tematiche e posizioni, e i fondi spesi. Indicare le associazioni di cui si è membri." },
+            'G1-6': {
+                title: "Prassi di pagamento",
+                type: 'mixed',
+                description: "Informazioni sulle pratiche di pagamento verso i fornitori, inclusa la percentuale di pagamenti puntuali e l'indicatore di tempestività (ITP). L'ITP fornisce una misura sintetica della puntualità o del ritardo con cui un'organizzazione salda i propri debiti commerciali.",
+                fields: [
+                    { id: 'onTimePayments', label: 'Percentuale di Pagamenti Puntuali (% On-Time)', unit: '%' },
+                    { id: 'paymentTimelinessIndicator', label: 'Indicatore di Tempestività dei Pagamenti (ITP)', unit: 'giorni' },
+                ]
+            },
+            'TAX-1': { title: 'Tassonomia Europea', type: 'policy', description: 'Informazioni relative all\'allineamento delle attività economiche con la Tassonomia Europea.' },
+            'GOV-3_E1_ref': { title: 'Integrazione delle prestazioni in termini di sostenibilità nei sistemi di incentivazione (Rif. Climatico)', type: 'policy', description: "Descrivere se e come le performance di sostenibilità (legate agli IRO materiali) sono integrate nei sistemi di remunerazione e incentivazione del management e/o dei dipendenti, con focus specifico sul clima.", isCrossReference: true },
+            'IRO-1_ref': { title: 'Descrizione dei processi per individuare e valutare gli impatti, i rischi e le opportunità rilevanti', type: 'policy', description: 'Riferimento incrociato a ESRS 2 IRO-1 per i dettagli sul processo di doppia materialità.', isCrossReference: true },
+            'IRO-1_E1_ref': { title: 'Processi per individuare IRO (Rif. Climatico)', type: 'policy', description: "Descrivere in dettaglio il processo svolto per l'analisi di doppia materialità, i criteri utilizzati per la valutazione dell'impatto e della rilevanza finanziaria, e gli stakeholder coinvolti, con focus specifico sul clima.", isCrossReference: true },
+            'IRO-1_E2_ref': { title: 'Processi per individuare IRO (Rif. Inquinamento)', type: 'policy', description: "Descrivere in dettaglio il processo svolto per l'analisi di doppia materialità, i criteri utilizzati per la valutazione dell'impatto e della rilevanza finanziaria, e gli stakeholder coinvolti, con focus specifico sull'inquinamento.", isCrossReference: true },
+            'IRO-1_E3_ref': { title: 'Processi per individuare IRO (Rif. Acqua)', type: 'policy', description: "Descrivere in dettaglio il processo svolto per l'analisi di doppia materialità, i criteri utilizzati per la valutazione dell'impatto e della rilevanza finanziaria, e gli stakeholder coinvolti, con focus specifico sulle acque e le risorse marine.", isCrossReference: true },
+             'IRO-1_G1_ref': { title: "Descrizione dei processi per individuare e valutare gli impatti, i rischi e le opportunità rilevanti", type: 'policy', description: "Processo di individuazione e valutazione di impatti, rischi e opportunità connessi alla condotta dell'impresa.", isCrossReference: true },
+             'SBM-2_S4_ref': { title: "Interessi e opinioni dei portatori d'interessi (Consumatori)", type: 'policy', description: "Descrivere come l'azienda identifica e coinvolge i consumatori e gli utenti finali, quali sono i loro principali interessi e opinioni riguardo alla sostenibilità e come questi vengono considerati nelle decisioni aziendali.", isCrossReference: true },
+             'SBM-2_S3_ref': { title: "Interessi e opinioni dei portatori d'interessi (Comunità)", type: 'policy', description: "Descrivere come l'azienda identifica e coinvolge le comunità interessate, quali sono i loro principali interessi e opinioni riguardo alla sostenibilità e come questi vengono considerati nelle decisioni aziendali.", isCrossReference: true },
+             'SBM-2_S2_ref': { title: "Interessi e opinioni delle parti interessate", type: 'policy', description: "L'impresa deve comunicare in che modo gli interessi, le opinioni e i diritti dei lavoratori della catena del valore, incluso il rispetto dei diritti umani, influenzano la propria strategia e il proprio modello aziendale.", isCrossReference: true },
+             'SBM-2_S1_ref': { title: "Interessi e opinioni delle parti interessate (Forza Lavoro)", type: 'policy', description: "SBM-2, l'impresa deve comunicare in che modo gli interessi, le opinioni e i diritti dei propri dipendenti, incluso il rispetto dei diritti umani, influenzano la propria strategia e il proprio modello aziendale. I dipendenti dell'impresa rappresentano un gruppo chiave di stakeholder interessati", isCrossReference: true },
+             'IRO-1_E5_ref': { title: "Descrizione dei processi per identificare e valutare l’uso delle risorse materiali e gli impatti, i rischi e le opportunità correlati all’economia circolare", type: 'policy', description: "L'impresa deve descrivere il processo per identificare gli impatti materiali, i rischi e le opportunità correlati all'uso delle risorse e all'economia circolare, in particolare per quanto riguarda gli afflussi di risorse, i deflussi di risorse e i rifiuti.", isCrossReference: true },
+             'IRO-1_E4_ref': { title: "Descrizione dei processi per identificare e valutare la biodiversità materiale e gli impatti, i rischi, le dipendenze e le opportunità correlati all'ecosistema", type: 'policy', description: "L'impresa deve descrivere il processo per identificare gli impatti materiali, i rischi, le dipendenze e le opportunità correlati alla biodiversità e agli ecosistemi.", isCrossReference: true },
+        };
+
+        // --- Stato dell'Applicazione ---
+        let appState = {
+            selection: {},
+            reportData: {
+                "GOV-3_E1": { "qualitative": "Attualmente, C.M. Service non ha un sistema di incentivazione formale per i membri degli organi di amministrazione, gestione e controllo che sia direttamente e quantitativamente legato al raggiungimento di obiettivi climatici (come riduzione delle emissioni di gas serra). Tuttavia, il raggiungimento degli obiettivi del Programma di Miglioramento Ambientale EMAS, che include target energetici e climatici, rientra tra gli elementi di valutazione della performance complessiva della Direzione e dei responsabili di funzione." },
+                "E1-1": { "qualitative": `C.M. Service non ha ancora formalizzato un piano di transizione per la mitigazione dei cambiamenti climatici pienamente allineato all'obiettivo di 1,5°C dell'Accordo di Parigi. Tuttavia, l'azienda ha intrapreso un percorso di decarbonizzazione e ha definito una serie di azioni e obiettivi che costituiscono le fondamenta di un futuro piano più strutturato. Le principali leve di decarbonizzazione identificate sono: Efficienza Energetica degli Immobili, Efficienza della Flotta Aziendale (transizione verso Euro 7) e Approvvigionamento di Energia Pulita. Questi impegni sono integrati nella strategia aziendale e finanziaria e approvati annualmente dall'Amministratore Unico.` },
+                "SBM-3_E1": { "qualitative": `Gli IRO legati al clima sono identificati e valutati attraverso l'Analisi Ambientale del nostro Sistema di Gestione EMAS/ISO 14001. I principali rischi identificati sono l'aumento dei costi operativi per l'energia e i carburanti (rischio di transizione) e le interruzioni operative dovute a eventi climatici estremi (rischio fisico). Le principali opportunità sono la riduzione dei costi tramite l'efficienza energetica e il vantaggio competitivo nelle gare d'appalto. L'azienda non ha ancora condotto un'analisi di resilienza quantitativa basata su scenari climatici.` },
+                "E1-2": { "qualitative": `La politica di riferimento è la Politica Ambientale Integrata aziendale, che guida tutte le azioni. Le azioni concrete includono il mantenimento delle certificazioni ISO 14001, ISO 50001 e della registrazione EMAS, investimenti mirati nel rinnovo della flotta e nell'efficientamento degli edifici, e l'acquisto di energia elettrica con garanzia di origine da fonti rinnovabili per il 30% del fabbisogno.` },
+                "E1-4": { "qualitative": `C.M. Service si impegna a definire nel biennio 2025-2026 un obiettivo di riduzione delle emissioni di Scope 1 e 2 al 2030 allineato agli Accordi di Parigi. L'anno base per le emissioni è il 2024. In attesa di un target assoluto, l'azienda persegue obiettivi operativi specifici, come la riduzione del 5% dei consumi specifici di gas e del 2% di quelli elettrici per la RSA "I Girasoli" entro il 2025.` },
+                "E1-5": { "totalEnergy": "3486.90", "fossilEnergy": "3286.7", "renewableEnergy": "200.2" },
+                "E1-6": { "scope1": "1173.63", "scope2_location": "570.00", "scope2_market": "1189.17", "scope3": "4814.35" },
+                "SBM-2": { "qualitative": "C.M. Service identifica i propri stakeholder attraverso un'analisi continua del contesto in cui opera. Le principali categorie includono dipendenti, clienti (enti pubblici e privati), fornitori, comunità locali e organi di controllo. Il coinvolgimento avviene tramite canali formali (riunioni, survey) e informali (dialogo quotidiano). Gli interessi degli stakeholder, come la qualità del servizio, la sicurezza sul lavoro e l'impatto ambientale, sono considerati input fondamentali per la definizione della strategia aziendale e per il processo di analisi di materialità." },
+                "SBM-3_S1": { "qualitative": `Gli impatti effettivi e potenziali sulla nostra forza lavoro originano dalla nostra strategia e informano le nostre decisioni. Gli impatti positivi includono la creazione di occupazione stabile e lo sviluppo di competenze. Gli impatti negativi potenziali sono legati principalmente a singoli incidenti di salute e sicurezza. I rischi materiali includono i costi legati agli infortuni e le difficoltà nel reperire personale qualificato. Le opportunità risiedono nella capacità di attrarre talenti e migliorare la produttività attraverso un ambiente di lavoro positivo.` },
+                "S1-1": { "qualitative": `C.M. Service pone la propria forza lavoro al centro della sua strategia. Le politiche sono definite nella Politica Aziendale Integrata e si basano su standard come ISO 45001 (Salute e Sicurezza), SA8000 (Responsabilità Sociale), e UNI/PdR 125:2022 (Parità di Genere). L'azienda si impegna a garantire condizioni di lavoro sicure, eque e non discriminatorie, a rispettare i CCNL, a promuovere la formazione continua e a mantenere un dialogo aperto con le rappresentanze sindacali.` },
+                "S1-11": { "qualitative": "Tutti i dipendenti di C.M. Service sono coperti dalla protezione sociale prevista dalla legislazione nazionale e dai contratti collettivi applicabili. Questo include la previdenza sociale (INPS), l'assicurazione obbligatoria contro gli infortuni sul lavoro e le malattie professionali (INAIL), e le tutele in caso di malattia, maternità/paternità e disoccupazione. L'azienda garantisce il versamento di tutti i contributi previsti per legge." },
+                "S1-14": { "workAccidents": "47", "ltifr": "8.14", "lostDays": "168" },
+                "S2-1": { "qualitative": `C.M. Service estende i propri principi etici all'intera catena di approvvigionamento attraverso il "Codice di Condotta Fornitori". Questo documento, parte integrante del processo di qualifica, definisce i requisiti minimi in termini di diritti umani, divieto di lavoro forzato e minorile, salute e sicurezza e pratiche etiche. L'adesione al codice è un prerequisito per i partner commerciali.`},
+                "S3-1": { "qualitative": `La gestione degli impatti sulle comunità è integrata in diverse policy aziendali. Il Codice Etico stabilisce i principi di rispetto per tutti gli stakeholder. La Politica Ambientale (ISO 14001/EMAS) gestisce gli impatti operativi diretti (rifiuti, emissioni). Le politiche di approvvigionamento privilegiano fornitori locali per generare valore condiviso.`},
+                "S4-1": { "qualitative": `La gestione degli impatti sugli utenti finali è governata dal Sistema di Gestione per la Sicurezza Alimentare (certificato ISO 22000) e dalla "Politica per la Sicurezza, Qualità e Sostenibilità Alimentare". L'azienda garantisce la massima sicurezza attraverso la metodologia HACCP, la tracciabilità di filiera (ISO 22005) e la tutela della privacy (GDPR, ISO 27001).`},
+                "G1-6": {
+                    "onTimePayments": "53.62",
+                    "paymentTimelinessIndicator": "1.71",
+                    "qualitative": "Circa il 53% delle fatture analizzate nel periodo di riferimento è stata pagata entro o alla data di scadenza concordata. L'indicatore di tempestività dei pagamenti (ITP) medio è di 1,71 giorni."
+                }
+            },
+            activeDR: null,
+            importTargetDrId: null,
+            activeTemplate: 'template-1'
+        };
+
+        // --- Funzioni Helper ---
+        const findNodeAndParents = (nodes, nodeId, parents = []) => {
+            for (const node of nodes) {
+                if (node.id === nodeId) return { node, parents };
+                if (node.children) {
+                    const found = findNodeAndParents(node.children, nodeId, [...parents, node]);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        const getAllChildIds = (node) => {
+            let ids = [];
+            if (node.children) {
+                node.children.forEach(child => {
+                    ids.push(child.id);
+                    ids = ids.concat(getAllChildIds(child));
+                });
+            }
+            return ids;
+        };
+
+        function showModal(message, title = 'Informazione') {
+            const existingModal = document.getElementById('custom-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modalOverlay = document.createElement('div');
+            modalOverlay.id = 'custom-modal';
+            modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+
+            const modalContent = document.createElement('div');
+            modalContent.className = 'bg-white p-6 rounded-lg shadow-xl max-w-md w-full';
+
+            const modalTitle = document.createElement('h3');
+            modalTitle.className = 'text-lg font-bold text-gray-800 mb-4';
+            modalTitle.textContent = title;
+
+            const modalMessage = document.createElement('p');
+            modalMessage.className = 'text-gray-700 mb-6';
+            modalMessage.textContent = message;
+
+            const closeButton = document.createElement('button');
+            closeButton.className = 'bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 w-full';
+            closeButton.textContent = 'OK';
+            closeButton.onclick = () => modalOverlay.remove();
+
+            modalContent.appendChild(modalTitle);
+            modalContent.appendChild(modalMessage);
+            modalContent.appendChild(closeButton);
+            modalOverlay.appendChild(modalContent);
+
+            document.body.appendChild(modalOverlay);
+        }
+
+        function formatNumberForDisplay(value) {
+            if (value === null || value === undefined || value === '') return '';
+            const numberString = String(value).replace(',', '.');
+            const number = parseFloat(numberString);
+            if (isNaN(number)) {
+                return value;
+            }
+            return number.toLocaleString('it-IT', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function parseFormattedNumber(value) {
+            if (typeof value !== 'string') return String(value);
+            return value.replace(/\./g, '').replace(',', '.');
+        }
+
+
+        // --- Funzioni di Rendering ---
+
+        function renderTopicNode(topic, level = 0) {
+            const isSelected = !!appState.selection[topic.id];
+            const hasChildren = topic.children && topic.children.length > 0;
+            return `
+                <div style="margin-left: ${level * 20}px" class="my-2">
+                    <div class="flex items-center bg-white p-2 rounded-md shadow-sm border border-gray-200">
+                        <input
+                            type="checkbox"
+                            id="check-${topic.id}"
+                            class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            ${isSelected ? 'checked' : ''}
+                            ${topic.alwaysActive ? 'disabled' : ''}
+                            data-topic-id="${topic.id}"
+                        />
+                        <label for="check-${topic.id}" class="ml-3 flex-grow font-semibold text-gray-800 cursor-pointer">
+                            ${topic.name}
+                        </label>
+                        ${hasChildren ? `
+                        <button data-toggle-id="${topic.id}" class="p-1">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        ` : ''}
+                    </div>
+                    ${hasChildren ? `
+                        <div id="content-${topic.id}" class="collapsible-content expanded mt-2 border-l-2 border-gray-200 pl-2">
+                            ${topic.children.map(child => renderTopicNode(child, level + 1)).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderMaterialitySelector() {
+            const container = document.getElementById('materiality-selector-container');
+            container.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Modulo 1: Analisi di Materialità</h2>
+                    <p class="text-gray-600 mb-6">Seleziona i temi, sotto-temi e sotto-sotto-temi materiali. La struttura del report si adatterà di conseguenza, attivando i relativi datapoint.</p>
+                    <div id="topics-tree">
+                        ${esrsStructure.map(topic => renderTopicNode(topic)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getVisibleDRs() {
+            const visibleDRs = [];
+            const traverse = (nodes) => {
+                nodes.forEach(node => {
+                    if (appState.selection[node.id]) {
+                        if (node.sections) {
+                            Object.values(node.sections).forEach(section => {
+                                section.requirements.forEach(drId => {
+                                    if (esrsDRDetails[drId]) {
+                                        visibleDRs.push(drId);
+                                    }
+                                });
+                            });
+                        }
+                        if (node.children) {
+                            traverse(node.children);
+                        }
+                    }
+                });
+            };
+            traverse(esrsStructure);
+            return visibleDRs;
+        }
+
+        function renderDataEntryForm(drId) {
+            const mainContent = document.getElementById('report-builder-main');
+            const dr = esrsDRDetails[drId];
+            if (!dr) {
+                mainContent.innerHTML = `<div class="text-center py-20 flex items-center justify-center h-full"><p class="text-gray-500 text-lg">Requisito non trovato o non ancora implementato.</p></div>`;
+                return;
+            }
+
+            const visibleDRs = getVisibleDRs();
+            const currentIndex = visibleDRs.indexOf(drId);
+            const prevDrId = currentIndex > 0 ? visibleDRs[currentIndex - 1] : null;
+            const nextDrId = currentIndex < visibleDRs.length - 1 ? visibleDRs[currentIndex + 1] : null;
+
+            let formHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-sm border">
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b">
+                        <h4 class="text-xl font-bold text-gray-800">${drId.split('_')[0]} - ${dr.title}</h4>
+                        <div class="flex space-x-2">
+                            <button id="prev-dr-btn" data-dr-id="${prevDrId || ''}" class="nav-arrow p-2 rounded-full hover:bg-gray-200 transition-colors" ${!prevDrId ? 'disabled' : ''} title="Requisito Precedente">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button id="next-dr-btn" data-dr-id="${nextDrId || ''}" class="nav-arrow p-2 rounded-full hover:bg-gray-200 transition-colors" ${!nextDrId ? 'disabled' : ''} title="Requisito Successivo">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mt-2 mb-6">${dr.description}</p>
+                    <div id="data-entry-form-body" class="space-y-6">
+            `;
+
+            if (dr.type === 'policy' || dr.type === 'targets' || dr.type === 'actions' || dr.type === 'mixed') {
+                 formHTML += `
+                        <div>
+                            <label for="qualitative-${drId}" class="block text-sm font-medium text-gray-700 mb-2">Descrizione Dettagliata / Narrativa</label>
+                            <textarea id="qualitative-${drId}"></textarea>
+                        </div>
+                `;
+            }
+
+            if ((dr.type === 'metrics' || dr.type === 'data' || dr.type === 'mixed') && dr.fields) {
+                if (dr.fields.length > 0) {
+                    formHTML += '<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">';
+                    dr.fields.forEach(field => {
+                        const rawValue = appState.reportData[drId]?.[field.id] || '';
+                        const formattedValue = formatNumberForDisplay(rawValue);
+                        formHTML += `
+                            <div>
+                                <label for="${drId}-${field.id}" class="block text-sm font-medium text-gray-700">${field.label}</label>
+                                <div class="mt-1 relative rounded-md shadow-sm">
+                                    <input
+                                        type="text"
+                                        id="${drId}-${field.id}"
+                                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pr-20"
+                                        placeholder="0,00"
+                                        value="${formattedValue}"
+                                        data-dr-id="${drId}"
+                                        data-field-id="${field.id}"
+                                    />
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">${field.unit || ''}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    formHTML += '</div>';
+                }
+            }
+
+            let buttonsHTML = `
+                <button class="action-btn bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 mr-3" data-import-btn="${drId}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Importa File
+                </button>
+                <button class="action-btn bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700" data-save-btn="${drId}">Salva Dati</button>
+            `;
+
+            formHTML += `
+                    <div class="flex justify-end items-center pt-4 border-t mt-6">
+                        ${buttonsHTML}
+                    </div>
+                </div></div>
+            `;
+            mainContent.innerHTML = formHTML;
+
+            if (dr.type === 'policy' || dr.type === 'targets' || dr.type === 'actions' || dr.type === 'mixed') {
+                tinymce.init({
+                    selector: `#qualitative-${drId}`,
+                    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange formatpainter pageembed a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage advtemplate ai mentions tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss markdown importword exportword exportpdf',
+                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                    height: 400,
+                    menubar: false,
+                    tinycomments_mode: 'embedded',
+                    tinycomments_author: 'C.M. Service',
+                    mergetags_list: [
+                      { value: 'First.Name', title: 'First Name' },
+                      { value: 'Email', title: 'Email' },
+                    ],
+                    ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
+                    setup: (editor) => {
+                        editor.on('init', () => {
+                            const value = appState.reportData[drId]?.qualitative || '';
+                            if (value) {
+                                editor.setContent(value);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function renderReportBuilderNav() {
+            const navContainer = document.getElementById('report-nav');
+            if (!navContainer) return;
+
+            const buildNavLinksHTML = (nodes, level = 0) => {
+                let html = `<ul class="${level > 0 ? 'ml-4' : ''}">`;
+                nodes
+                    .filter(node => appState.selection[node.id] || node.alwaysActive)
+                    .forEach(node => {
+                        html += `<li class="my-2"><span class="font-bold text-gray-800">${node.name}</span>`;
+
+                        if (node.children && node.children.length > 0) {
+                             html += buildNavLinksHTML(node.children, level + 1);
+                        }
+
+                        if(node.sections) {
+                            html += '<ul class="mt-1 ml-4">';
+                            Object.values(node.sections).forEach(section => {
+                                const hasVisibleDRs = section.requirements.some(drId => esrsDRDetails[drId]);
+                                if (hasVisibleDRs) {
+                                    html += `<li class="my-1"><span class="font-semibold text-blue-700 capitalize">${section.title}</span>`;
+                                    html += '<ul class="border-l-2 border-blue-200 pl-3 mt-1">';
+                                    section.requirements.forEach(dpId => {
+                                        const dr = esrsDRDetails[dpId];
+                                        if (dr) {
+                                            html += `
+                                                <li class="mt-1">
+                                                    <a href="#" data-dr-id="${dpId}" class="nav-link block text-sm rounded-md p-2 transition-colors text-gray-700 hover:bg-gray-200 ${appState.activeDR === dpId ? 'active' : ''}">
+                                                        <span class="font-medium ${dr.isCrossReference ? 'italic' : ''}">${dpId.split('_')[0]}</span> - ${dr.title.substring(0, 30)}...
+                                                    </a>
+                                                </li>
+                                            `;
+                                        }
+                                    });
+                                    html += '</ul></li>';
+                                }
+                            });
+                            html += '</ul>';
+                        }
+                        html += '</li>';
+                    });
+                html += '</ul>';
+                return html;
+            };
+            navContainer.innerHTML = `<h3 class="font-bold text-lg text-gray-800 mb-4">Indice dei Requisiti</h3><nav>${buildNavLinksHTML(esrsStructure)}</nav>`;
+        }
+
+        function renderReportBuilder() {
+            const container = document.getElementById('report-builder-container');
+            container.innerHTML = `
+                <div class="mt-8 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-2xl font-bold text-gray-800">Modulo 2 & 3: Struttura del Report e Raccolta Dati</h2>
+                        <p class="text-gray-600">Seleziona un requisito dall'indice per iniziare la compilazione.</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row min-h-[600px]">
+                        <aside id="report-nav" class="w-full md:w-1/3 lg:w-1/4 bg-gray-50 border-r border-gray-200 p-6 overflow-y-auto"></aside>
+                        <main id="report-builder-main" class="flex-1 p-8 bg-white">
+                            <div class="text-center py-20 flex items-center justify-center h-full">
+                                <p class="text-gray-500 text-lg">Seleziona un requisito di informativa dall'indice per iniziare la compilazione.</p>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            `;
+            renderReportBuilderNav();
+        }
+
+        function renderReportGenerator() {
+             document.getElementById('report-generator-container').innerHTML = `
+                <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Modulo 4: Generazione del Report</h2>
+                    <p class="text-gray-600 mb-6">Seleziona un template e genera il bilancio di sostenibilità.</p>
+
+                    <div id="template-selector-container" class="mb-6"></div>
+
+                    <div class="flex items-center space-x-4">
+                        <button id="generate-report-btn" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-all text-lg shadow-md hover:shadow-lg">
+                            Genera Anteprima Bilancio
+                        </button>
+                    </div>
+                </div>
+             `;
+             renderTemplateSelector();
+        }
+
+        function renderTemplateSelector() {
+            const container = document.getElementById('template-selector-container');
+            const templates = [
+                { id: 'template-1', name: 'Corporate Blue', thumb: 'https://placehold.co/150x100/3b82f6/FFFFFF?text=Corporate' },
+                { id: 'template-2', name: 'Eco Green', thumb: 'https://placehold.co/150x100/22c55e/FFFFFF?text=Eco' },
+                { id: 'template-3', name: 'Modern Tech', thumb: 'https://placehold.co/150x100/007bff/FFFFFF?text=Tech' },
+                { id: 'template-4', name: 'Formal Report', thumb: 'https://placehold.co/150x100/6c757d/FFFFFF?text=Formal' },
+                { id: 'template-5', name: 'Human-Centric', thumb: 'https://placehold.co/150x100/f59e0b/FFFFFF?text=Human' },
+            ];
+
+            let html = `
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">Scegli un Template</h3>
+                <div class="template-selector grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            `;
+            templates.forEach(template => {
+                html += `
+                    <div class="template-card border-2 rounded-lg p-2 ${appState.activeTemplate === template.id ? 'selected' : 'border-transparent'}" data-template-id="${template.id}">
+                        <img src="${template.thumb}" alt="${template.name}" class="w-full h-auto rounded-md mb-2">
+                        <p class="text-center text-sm font-medium text-gray-600">${template.name}</p>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderReportPreview() {
+            const container = document.getElementById('report-preview-container');
+            container.className = `mt-8 ${appState.activeTemplate}`; // Applica la classe del template
+
+            let previewHTML = `
+                <div class="bg-white p-8 md:p-12 rounded-xl shadow-lg border border-gray-200">
+                    <div id="report-preview-content">
+                        <div class="text-center border-b-4 border-blue-800 pb-8 mb-12">
+                             <img src="https://i.postimg.cc/sDKKB8Tn/cm-service-cover.jpg" alt="Logo C.M. Service" class="w-1/3 h-auto mx-auto mb-6">
+                            <h1 class="text-5xl font-bold text-blue-900">Bilancio di Sostenibilità 2024</h1>
+                            <p class="text-2xl text-gray-600 mt-2">Redatto in conformità agli standard ESRS</p>
+                        </div>
+            `;
+
+            const isDataEmpty = (drId) => {
+                const data = appState.reportData[drId];
+                if (!data) return true;
+                const hasQualitative = data.qualitative && data.qualitative.replace(/<(.|\n)*?>/g, '').trim().length > 0 && data.qualitative.trim() !== '<p><br></p>';
+                const hasQuantitative = esrsDRDetails[drId]?.fields?.some(field => data[field.id] && String(data[field.id]).trim() !== '');
+                return !hasQualitative && !hasQuantitative;
+            };
+
+            const renderNodeData = (node) => {
+                if (!appState.selection[node.id] && !node.alwaysActive) return '';
+
+                let sectionHTMLs = {};
+                let hasAnyContent = false;
+
+                if (node.sections) {
+                    Object.entries(node.sections).forEach(([sectionKey, section]) => {
+                        let currentSectionHTML = '';
+                        let sectionHasContent = false;
+
+                        section.requirements.forEach(drId => {
+                            if (!isDataEmpty(drId)) {
+                                sectionHasContent = true;
+                                hasAnyContent = true;
+                                const drData = appState.reportData[drId];
+                                const drDetails = esrsDRDetails[drId];
+
+                                currentSectionHTML += `<div class="mb-4 pl-4 border-l-4 border-gray-200">`;
+                                currentSectionHTML += `<h4 class="text-lg font-semibold text-gray-800">${drId.split('_')[0]} - ${drDetails.title}</h4>`;
+
+                                if (drData.qualitative) {
+                                    currentSectionHTML += `<div class="mt-2 text-gray-700">${drData.qualitative}</div>`;
+                                }
+
+                                if (drDetails.fields && drDetails.fields.some(field => drData[field.id])) {
+                                    currentSectionHTML += `<table class="min-w-full divide-y divide-gray-200 mt-4">
+                                        <thead class="bg-gray-50"><tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metrica</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valore</th>
+                                        </tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
+                                    drDetails.fields.forEach(field => {
+                                        const rawValue = drData[field.id];
+                                        if (rawValue !== null && rawValue !== undefined && String(rawValue).trim() !== '') {
+                                            const formattedValue = formatNumberForDisplay(rawValue);
+                                            currentSectionHTML += `<tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${field.label}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedValue} ${field.unit || ''}</td>
+                                            </tr>`;
+                                        }
+                                    });
+                                    currentSectionHTML += `</tbody></table>`;
+                                }
+                                currentSectionHTML += `</div>`;
+                            }
+                        });
+
+                        if (sectionHasContent) {
+                            sectionHTMLs[sectionKey] = `<h3>${section.title}</h3>${currentSectionHTML}`;
+                        }
+                    });
+                }
+
+                if (node.children) {
+                    node.children.forEach(child => {
+                        const childHTML = renderNodeData(child);
+                        if (childHTML) {
+                            hasAnyContent = true;
+                            sectionHTMLs[child.id] = childHTML;
+                        }
+                    });
+                }
+
+                if (!hasAnyContent) return '';
+
+                let finalNodeHTML = `<h2>${node.name}</h2>`;
+                if (node.id === 'E') finalNodeHTML += `<img src="https://placehold.co/700x250/a0d2eb/FFFFFF?text=Ambiente" alt="Immagine a tema ambientale" class="w-full h-auto object-cover rounded-lg my-4">`;
+                if (node.id === 'S') finalNodeHTML += `<img src="https://placehold.co/700x250/fde68a/FFFFFF?text=Sociale" alt="Immagine a tema sociale" class="w-full h-auto object-cover rounded-lg my-4">`;
+                if (node.id === 'G') finalNodeHTML += `<img src="https://placehold.co/700x250/4a5568/FFFFFF?text=Governance" alt="Immagine a tema governance" class="w-full h-auto object-cover rounded-lg my-4">`;
+
+                finalNodeHTML += Object.values(sectionHTMLs).join('');
+                return finalNodeHTML;
+            };
+
+            esrsStructure.forEach(node => {
+                previewHTML += renderNodeData(node);
+            });
+
+            previewHTML += `</div>
+                <div id="export-buttons" class="mt-8 pt-6 border-t flex justify-end space-x-4">
+                    <button id="export-pdf-btn" class="bg-red-700 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-800">Esporta in PDF</button>
+                    <button id="export-word-btn" class="bg-blue-700 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-800">Esporta in Word</button>
+                </div>
+            </div>`;
+            container.innerHTML = previewHTML;
+        }
+
+        // --- Logica di Interazione ---
+        function handleToggleSelection(topicId) {
+            const { node, parents } = findNodeAndParents(esrsStructure, topicId);
+            if (!node || node.alwaysActive) return;
+
+            const isSelected = !appState.selection[topicId];
+
+            const allIdsToChange = [node.id, ...getAllChildIds(node)];
+            allIdsToChange.forEach(id => { appState.selection[id] = isSelected; });
+
+            if (isSelected) {
+                parents.forEach(parent => { appState.selection[parent.id] = true; });
+            }
+
+            renderMaterialitySelector();
+            renderReportBuilderNav();
+        }
+
+        function handleSaveData(drId) {
+            const form = document.getElementById('data-entry-form-body');
+            if (!form || !drId) return;
+
+            const editor = tinymce.get(`qualitative-${drId}`);
+            if (editor) {
+                if (!appState.reportData[drId]) {
+                    appState.reportData[drId] = {};
+                }
+                appState.reportData[drId]['qualitative'] = DOMPurify.sanitize(editor.getContent());
+            }
+
+            const inputs = form.querySelectorAll('input[data-dr-id]');
+            inputs.forEach(input => {
+                const { drId: inputDrId, fieldId } = input.dataset;
+                if (!appState.reportData[inputDrId]) {
+                    appState.reportData[inputDrId] = {};
+                }
+                appState.reportData[inputDrId][fieldId] = parseFormattedNumber(input.value);
+            });
+
+            const notification = document.getElementById('save-notification');
+            notification.classList.remove('opacity-0', 'translate-y-10');
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'translate-y-10');
+            }, 2000);
+        }
+
+        async function handleFileImport(event) {
+            const file = event.target.files[0];
+            const editor = tinymce.get(`qualitative-${appState.importTargetDrId}`);
+            if (!file || !editor) return;
+
+            const drId = appState.importTargetDrId;
+            if (!drId) return;
+
+            const importButton = document.querySelector(`[data-import-btn="${drId}"]`);
+            const originalButtonContent = importButton.innerHTML;
+            importButton.innerHTML = 'Importazione...';
+            importButton.disabled = true;
+
+            try {
+                let content = '';
+                if (file.name.endsWith('.docx')) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.convertToHtml({ arrayBuffer });
+                    content = DOMPurify.sanitize(result.value);
+                } else if (file.name.endsWith('.pdf')) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    let fullText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        fullText += `<p>${pageText.replace(/\n/g, '<br>')}</p>`;
+                    }
+                    content = DOMPurify.sanitize(fullText);
+                } else {
+                    throw new Error('Formato file non supportato. Selezionare .docx o .pdf');
+                }
+
+                editor.setContent(content);
+                handleSaveData(drId);
+                showModal('Contenuto importato e salvato con successo!', 'Importazione Riuscita');
+
+            } catch (error) {
+                console.error('Errore durante l\'importazione del file:', error);
+                showModal('Errore durante l\'importazione del file: ' + error.message, 'Errore Importazione');
+            } finally {
+                importButton.innerHTML = originalButtonContent;
+                importButton.disabled = false;
+                event.target.value = '';
+            }
+        }
+
+        function handleSaveSession() {
+            try {
+                // Salva i dati dell'editor attivo, se esiste
+                if (appState.activeDR) {
+                    handleSaveData(appState.activeDR);
+                }
+
+                // Crea una copia "pulita" dello stato da salvare
+                const stateToSave = {
+                    selection: appState.selection,
+                    reportData: appState.reportData,
+                    activeDR: appState.activeDR,
+                    activeTemplate: appState.activeTemplate,
+                };
+
+                const sessionData = JSON.stringify(stateToSave, null, 2);
+                const blob = new Blob([sessionData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sessione_sostenibilita_cm_service.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showModal('Sessione salvata con successo come file JSON.', 'Salvataggio Riuscito');
+            } catch (error) {
+                console.error('Errore durante il salvataggio della sessione:', error);
+                showModal('Si è verificato un errore durante il salvataggio della sessione: ' + error.message, 'Errore');
+            }
+        }
+
+        async function handleLoadSessionFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loadedState = JSON.parse(e.target.result);
+                    if (loadedState && typeof loadedState.selection === 'object' && typeof loadedState.reportData === 'object') {
+                        // Unisci lo stato caricato
+                        appState.selection = loadedState.selection;
+                        appState.reportData = loadedState.reportData;
+                        appState.activeDR = loadedState.activeDR;
+                        appState.activeTemplate = loadedState.activeTemplate || 'template-1';
+
+                        // Resetta le proprietà transienti
+                        appState.importTargetDrId = null;
+
+                        // Re-render dell'applicazione
+                        renderMaterialitySelector();
+                        renderReportBuilder();
+                        renderReportGenerator();
+                        if(appState.activeDR) {
+                            renderDataEntryForm(appState.activeDR);
+                        }
+                        showModal('Sessione caricata con successo!', 'Caricamento Riuscito');
+                    } else {
+                        throw new Error('Il file non sembra contenere una sessione valida.');
+                    }
+                } catch (error) {
+                    console.error('Errore durante il caricamento della sessione:', error);
+                    showModal('Errore nel caricare il file di sessione. Assicurati che sia un file JSON valido generato da questa applicazione.', 'Errore di Caricamento');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportToPdf() {
+            const { jsPDF } = window.jspdf;
+            const reportContent = document.getElementById("report-preview-content");
+
+            showModal('Generazione PDF in corso...', 'Esportazione');
+
+            html2canvas(reportContent, { scale: 2, windowWidth: reportContent.scrollWidth, windowHeight: reportContent.scrollHeight }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const ratio = canvasWidth / canvasHeight;
+                const imgWidth = pdfWidth - 20; // Margini
+                const imgHeight = imgWidth / ratio;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 10, position + 10, imgWidth, imgHeight);
+                heightLeft -= (pdfHeight - 20);
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 10, position + 10, imgWidth, imgHeight);
+                    heightLeft -= (pdfHeight - 20);
+                }
+
+                const pageCount = pdf.internal.getNumberOfPages();
+                for(let i = 1; i <= pageCount; i++) {
+                    pdf.setPage(i);
+                    pdf.setFontSize(10);
+                    pdf.text(`Pagina ${i} di ${pageCount}`, pdfWidth - 35, pdfHeight - 10);
+                }
+
+                pdf.save("bilancio_sostenibilita_cm_service.pdf");
+                showModal('PDF esportato con successo!', 'Esportazione Completata');
+            });
+        }
+
+        function exportToWord() {
+            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' "+
+                "xmlns:w='urn:schemas-microsoft-com:office:word' "+
+                "xmlns='http://www.w3.org/TR/REC-html40'>"+
+                "<head><meta charset='utf-8'><title>Bilancio di Sostenibilità</title></head><body>";
+            const footer = "</body></html>";
+            const sourceHTML = header + document.getElementById("report-preview-content").innerHTML + footer;
+
+            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+            const fileDownload = document.createElement("a");
+            document.body.appendChild(fileDownload);
+            fileDownload.href = source;
+            fileDownload.download = 'bilancio_sostenibilita_cm_service.doc';
+            fileDownload.click();
+            document.body.removeChild(fileDownload);
+        }
+
+        function navigateToDR(drId) {
+            if (!drId) return;
+
+            if (appState.activeDR) {
+                handleSaveData(appState.activeDR);
+                const oldEditor = tinymce.get(`qualitative-${appState.activeDR}`);
+                if (oldEditor) {
+                    oldEditor.destroy();
+                }
+            }
+
+            appState.activeDR = drId;
+            renderReportBuilderNav();
+            renderDataEntryForm(appState.activeDR);
+            const reportBuilder = document.getElementById('report-builder-container');
+            reportBuilder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // --- Inizializzazione e Gestione Eventi ---
+        function init() {
+            const initialSelection = {
+                "ESRS 2": true, "E": true, "E1": true, "E2": true, "E3": true, "E4": true, "E5": true,
+                "S": true, "S1": true, "S2": true, "S3": true, "S4": true,
+                "G": true, "G1": true, "Tassonomia": true
+            };
+            appState.selection = initialSelection;
+
+            renderMaterialitySelector();
+            renderReportBuilder();
+            renderReportGenerator();
+
+            document.body.addEventListener('click', (e) => {
+                const checkbox = e.target.closest('input[type="checkbox"]');
+                const toggleButton = e.target.closest('button[data-toggle-id]');
+                const navLink = e.target.closest('a[data-dr-id]');
+                const saveBtn = e.target.closest('button[data-save-btn]');
+                const importBtn = e.target.closest('button[data-import-btn]');
+                const generateBtn = e.target.closest('#generate-report-btn');
+                const exportPdfBtn = e.target.closest('#export-pdf-btn');
+                const exportWordBtn = e.target.closest('#export-word-btn');
+                const saveSessionBtn = e.target.closest('#save-session-btn');
+                const loadSessionBtn = e.target.closest('#load-session-btn');
+                const prevBtn = e.target.closest('#prev-dr-btn');
+                const nextBtn = e.target.closest('#next-dr-btn');
+                const templateCard = e.target.closest('.template-card');
+
+                if (checkbox) {
+                    handleToggleSelection(checkbox.dataset.topicId);
+                } else if (toggleButton) {
+                    document.getElementById(`content-${toggleButton.dataset.toggleId}`).classList.toggle('expanded');
+                } else if (navLink) {
+                    e.preventDefault();
+                    navigateToDR(navLink.dataset.drId);
+                } else if (prevBtn && !prevBtn.disabled) {
+                    navigateToDR(prevBtn.dataset.drId);
+                } else if (nextBtn && !nextBtn.disabled) {
+                    navigateToDR(nextBtn.dataset.drId);
+                } else if (saveBtn) {
+                    handleSaveData(saveBtn.dataset.saveBtn);
+                } else if (importBtn) {
+                    appState.importTargetDrId = importBtn.dataset.importBtn;
+                    document.getElementById('file-importer').click();
+                } else if (generateBtn) {
+                    if (appState.activeDR) {
+                        handleSaveData(appState.activeDR);
+                    }
+                    renderReportPreview();
+                    document.getElementById('report-preview-container').scrollIntoView({ behavior: 'smooth' });
+                } else if(exportPdfBtn) {
+                    exportToPdf();
+                } else if(exportWordBtn) {
+                    exportToWord();
+                } else if (saveSessionBtn) {
+                    handleSaveSession();
+                } else if (loadSessionBtn) {
+                    document.getElementById('session-loader').click();
+                } else if (templateCard) {
+                    appState.activeTemplate = templateCard.dataset.templateId;
+                    renderTemplateSelector(); // Rerender to show selection
+                }
+            });
+
+            document.getElementById('file-importer').addEventListener('change', handleFileImport);
+            document.getElementById('session-loader').addEventListener('change', handleLoadSessionFile);
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+</html>
