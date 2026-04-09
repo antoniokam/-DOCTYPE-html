@@ -1,0 +1,3 @@
+## 2024-04-09 - [Optimize HTML tag stripping and function hoisting]
+**Learning:** The regex `/<(.|\n)*?>/g` used for stripping HTML tags can cause catastrophic backtracking and performance degradation in render loops. Additionally, `isDataEmpty` was being recreated unnecessarily on every render.
+**Action:** Replace inefficient HTML tag regex with the standard `/<[^>]*>/g`. Hoist the regex definition and the `isDataEmpty` function to the global scope (e.g., `// --- Funzioni Helper ---`) to prevent recompilation and recreation overhead. Ensure formatting is preserved when moving code using automated script replacements.
